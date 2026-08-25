@@ -1,0 +1,15 @@
+<Project>
+  <!--
+    Shared build settings that enforce the Agentic SDD CONVENTIONS across every project.
+    Installed to the target repo root by bootstrap/install.ps1 when stack.kind = "dotnet"
+    (skipped if the repo already has a Directory.Build.props). Adjust as needed.
+  -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest</AnalysisLevel>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,49 @@
+# Agentic SDD — continuous integration (product code the process produces).
+# Build (warnings-as-errors) -> test (+coverage) -> format check. Defaults target .NET; edit the
+# steps for other stacks (see process.config.json > stack). Wire this as a required status check on
+# your target branch so a PR cannot merge unless it is green.
+#
+# NOTE: the .NET 8 SDK cannot build the newer .slnx solution format. If your repo uses .slnx, bump
+# setup-dotnet's dotnet-version to 9.0.x or 10.0.x below (a classic .sln works on 8.0.x).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-test-format:
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_NOLOGO: "true"
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+      # Point at your solution/project, or leave blank to build the whole repo.
+      SOLUTION: ""
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # full history so change-budget diffs can reach the merge base
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore ${{ env.SOLUTION }}
+
+      - name: Build (warnings as errors)
+        run: dotnet build ${{ env.SOLUTION }} --configuration Release --no-restore /warnaserror
+
+      - name: Test (+ coverage)
+        run: >
+          dotnet test ${{ env.SOLUTION }}
+          --configuration Release
+          --no-build
+          --logger trx
+          --results-directory ${{ runner.temp }}/testresults
+          --collect:"XPlat Code Coverage"
+
+      - name: Format check
+        run: dotnet format ${{ env.SOLUTION }} --verify-no-changes --no-restore

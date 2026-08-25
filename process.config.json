@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "2.0",
+  "_about": "Agentic SDD configuration. One runtime (GitHub Copilot CLI), one GitHub-based flow. Copy to process.config.json and fill in github + stack. Defaults target .NET/Blazor but every stack assumption is overridable.",
+  "github": {
+    "owner": "YOUR-ORG",
+    "repo": "YOUR-REPO",
+    "targetBranch": "main",
+    "defaultReviewers": [],
+    "mergeMethod": "squash",
+    "_mergeMethod_help": "How the agent merges when autonomy.autonomousMerge is true: 'squash' (default), 'merge', or 'rebase'.",
+    "deleteBranchOnMerge": true
+  },
+  "git": {
+    "branchPrefix": "feature/",
+    "worktreeRoot": "/",
+    "_worktreeRoot_help": "Where dedicated feature worktrees are created. The worktree-vs-same-branch choice is made per feature during INTAKE. Worktrees should be created in the project directory. Warn when this project directory is not setup to handle the worktree directory structure. Otherwise use ../.sdd-worktrees/"
+  },
+  "tracker": {
+    "root": "specs"
+  },
+  "stack": {
+    "kind": "dotnet",
+    "_kind_help": "Informational label for the primary stack (e.g. 'dotnet', 'node', 'python'). Defaults target .NET/Blazor.",
+    "solution": "",
+    "_solution_help": "Path to the .sln/.slnx (or project) to build/test. Empty = let the tool discover it / build the whole repo.",
+    "buildCommand": "dotnet build {solution} -c Release",
+    "testCommand": "dotnet test {solution} -c Release",
+    "formatCommand": "dotnet format {solution} --verify-no-changes",
+    "_commands_help": "Override these for non-.NET stacks (e.g. 'npm run build', 'pytest'). '{solution}' is substituted from stack.solution; if empty it and its flag are dropped. Build must be warning-free."
+  },
+  "planning": {
+    "productCycle": true,
+    "_productCycle_help": "When true, greenfield apps/epics run a lightweight BLUEPRINT + BACKLOG pass before features. A single small change can skip it and start at INTAKE.",
+    "backlogPath": "specs/backlog.md",
+    "humanReviewBacklog": true,
+    "_humanReviewBacklog_help": "Pause once for a human to review the backlog before autonomous execution begins."
+  },
+  "autonomy": {
+    "processBacklogAutonomously": true,
+    "maxFeaturesPerRun": 0,
+    "_maxFeaturesPerRun_help": "Max features to complete in one EXECUTE run; 0 = unlimited (until no READY rows remain).",
+    "stopOnEscalation": true,
+    "autonomousPrReview": true,
+    "_autonomousPrReview_help": "When true, the PR is created automatically after REVIEW. When false, stop after REVIEW for a human to create the PR.",
+    "autonomousMerge": true,
+    "_autonomousMerge_help": "DEFAULT true: after the PR is created, the agent waits for the review tool + CI (see 'review'), addresses feedback, then MERGES itself and continues. Set false to keep a human merge gate (agent stops at PR)."
+  },
+  "review": {
+    "waitForReviewTool": true,
+    "_waitForReviewTool_help": "When autonomousMerge is true, wait for an automated PR review tool (e.g. GitHub Copilot code review) before merging. Set false if the repo has no review tool (agent merges once CI is green).",
+    "reviewer": "copilot-pull-request-reviewer[bot]",
+    "_reviewer_help": "The review bot to request/re-request on each PR. Only 'copilot-pull-request-reviewer[bot]' works via the REST requested_reviewers endpoint. Re-request after every new commit.",
+    "requireCiGreen": true,
+    "maxRounds": 5,
+    "_maxRounds_help": "Max review->fix->re-request rounds before escalating instead of merging."
+  },
+  "changeBudget": {
+    "_about": "A single change budget (guidance, not a hard wall). Exceeding it requires a tracker Decision/Escalation entry justifying why the overage is in scope. Tune to your stage: tighten for maintenance, relax for greenfield.",
+    "maxFilesChanged": 40,
+    "maxNewFiles": 25,
+    "maxNewProjects": 1,
+    "maxNewPackages": 3,
+    "maxLocDelta": 2000
+  },
+  "allowedPackages": [],
+  "_allowedPackages_help": "Packages that may be added without an escalation. Anything else requires a Decision entry.",
+  "loops": {
+    "maxImplementIterations": 2,
+    "maxBuildRetries": 2,
+    "_help": "Bounded loops: max IMPLEMENT<->VERIFY iterations and build/test retries before escalating."
+  },
+  "quality": {
+    "requireTests": true,
+    "coverageThreshold": 70,
+    "_help": "Not definitive. Tests should be asked upfront if the test project is requried. Coverage should not be met if no reasonable tests can be created that test the BL. The architectural patterns should be reviewed if not suitable fur automated testing"
+  },
+  "build": {
+    "lockingProcesses": [],
+    "_lockingProcesses_help": "Optional (Windows): process names of app hosts that lock build outputs (e.g. your API/Web host exe names). build-and-test stops them by PID before building to avoid MSB3021/MSB3027 file locks. Empty = no-op."
+  }
+}

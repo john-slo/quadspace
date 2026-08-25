@@ -1,0 +1,31 @@
+# --- Secrets (never commit) ---
+.env
+*.pat
+*.secret
+
+# --- Agentic SDD ---
+.sdd-worktrees/
+
+# --- .NET build output ---
+[Bb]in/
+[Oo]bj/
+TestResults/
+*.user
+artifacts/
+coverage/
+*.trx
+*.coverage
+
+# --- IDE ---
+.vs/
+.idea/
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Agent scratch artifacts ---
+diff.txt
+*.tmp
+*.scratch
+*.sdd.tmp
