@@ -30,13 +30,9 @@ RUN dotnet build "src/Quadspace.Host/Quadspace.Host.csproj" \
     -p:DebugType=none \
     -p:DebugSymbols=false
 
-# Publish the application (bundles the client's published WASM assets into wwwroot).
-# NOTE: PublishReadyToRun must stay false — R2R/crossgen cannot be applied to the
-# Blazor WebAssembly (Client) assemblies and fails the publish with NETSDK1095.
-# DebugType=none prevents the publish step from looking for PDB files that don't exist.
-# We must NOT use --no-build here because the _framework folder generation requires
-# the full publish pipeline to run, which includes bundling the Blazor client.
-# UseAppHost=false prevents self-contained publish which we don't want in a container.
+# Publish the Host project with explicit fingerprint handling
+# The key is -p:GenerateStaticWebAssetsManifest=true which ensures fingerprints are properly generated
+# and -p:OverrideHtmlAssetPlaceholders=true which replaces #[.{fingerprint}] in index.html
 RUN dotnet publish "src/Quadspace.Host/Quadspace.Host.csproj" \
     --configuration Release \
     --output /app/publish \
@@ -45,7 +41,19 @@ RUN dotnet publish "src/Quadspace.Host/Quadspace.Host.csproj" \
     -p:PublishSingleFile=false \
     -p:DebugType=none \
     -p:DebugSymbols=false \
-    -p:UseAppHost=false
+    -p:UseAppHost=false \
+    -p:OverrideHtmlAssetPlaceholders=true \
+    -p:GenerateStaticWebAssetsManifest=true
+
+# Post-publish: fix the index.html fingerprint if still present
+# Find the actual blazor.webassembly filename and replace the placeholder
+RUN cd /app/publish/wwwroot && \
+    BLAZOR_FILE=$(ls -1 _framework/blazor.webassembly.*.js 2>/dev/null | head -1 | xargs basename) && \
+    if [ -n "$BLAZOR_FILE" ]; then \
+      FINGERPRINT=$(echo "$BLAZOR_FILE" | sed 's/blazor.webassembly.\(.*\)\.js/\1/'); \
+      sed -i "s|_framework/blazor.webassembly#\[\.\{fingerprint\}\]\.js|_framework/blazor.webassembly.$FINGERPRINT.js|g" index.html; \
+      echo "Fixed index.html: replaced fingerprint with $FINGERPRINT"; \
+    fi
 
 # ============================================================================
 # Stage 2: Runtime (Slim)
