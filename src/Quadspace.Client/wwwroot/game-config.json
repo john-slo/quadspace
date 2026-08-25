@@ -1,0 +1,10 @@
+{
+  "arena": { "width": 1280, "height": 720 },
+  "ship": { "speed": 320, "radius": 16, "startLives": 3, "invulnerabilitySeconds": 2.0 },
+  "sphere": { "speed": 140, "radius": 16, "spawnRatePerLevelPerSecond": 1.0 },
+  "projectile": { "speed": 640, "radius": 4, "maxOnScreen": 64, "cooldownSeconds": 0.12 },
+  "scoring": { "pointsPerSphere": 8, "spheresPerLevelMultiplier": 8 },
+  "lives": { "extraLifeEveryLevels": 8, "lifeSphereSpawnChance": 0.02, "maxLives": 9 },
+  "levels": { "introSeconds": 2.0 },
+  "starfield": { "layers": 3, "starsPerLayer": 60 }
+}

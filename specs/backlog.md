@@ -39,7 +39,7 @@ lives in a central `game-config.json`.
 -->
 | Id | Slug | Priority | DependsOn | Outcome | Status |
 | --- | --- | --- | --- | --- | --- |
-| 1 | project-scaffold | P0 | - | Solution with Shared/Client/Host/Tests projects (net10.0), `game-config.json`, updated config + CI; the empty neon app builds, tests run, and `dotnet run` serves a page in the browser. | READY |
+| 1 | project-scaffold | P0 | - | Solution with Shared/Client/Host/Tests projects (net10.0), `game-config.json`, updated config + CI; the empty neon app builds, tests run, and `dotnet run` serves a page in the browser. | IN_PROGRESS |
 | 2 | score-persistence | P0 | 1 | File-based score service (per-date daily JSON + insert-in-order top-100 JSON) and minimal host API (`GET /api/scores/top`, `POST /api/scores`), fully xUnit-tested. | READY |
 | 3 | home-highscores | P0 | 2 | Retro 80s arcade home/attract screen listing the top 10 high scores with an "insert coin"/start prompt. | READY |
 | 4 | game-shell-render | P0 | 1 | Canvas render loop with parallax starfield depth-field background, the ship rendered and moving via WASD, and a HUD showing score/level/lives. | READY |
@@ -53,6 +53,7 @@ lives in a central `game-config.json`.
 | Timestamp (UTC) | Event | Feature | Note |
 | --- | --- | --- | --- |
 | 2026-08-25T09:27:00Z | backlog created | - | drafted during BACKLOG; approved by human checkpoint |
+| 2026-08-25T09:30:00Z | feature started | 1-project-scaffold | on shared branch feature/initial-game (epic issue #1) |
 
 ## Decisions
 <!-- Required to add, remove, or re-scope a backlog row after the human checkpoint. Otherwise "None". -->
