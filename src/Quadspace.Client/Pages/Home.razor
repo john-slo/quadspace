@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 @implements IAsyncDisposable
 @inject HttpClient Http
 @inject IJSRuntime JS
@@ -36,12 +36,15 @@
     </section>
 
     <a class="start-link" id="press-start" href="game">PRESS START</a>
-    <p class="neon-hint">INSERT COIN — PRESS ANY KEY FOR SOUND</p>
+    <button class="sound-toggle" @onclick="ToggleSound" title="@(_soundEnabled ? "Disable Sound" : "Enable Sound")">
+        <span class="sound-icon">@(_soundEnabled ? "🔊" : "🔇")</span>
+    </button>
 </div>
 
 @code {
     private IReadOnlyList<ScoreEntry> _scores = [];
     private bool _loading = true;
+    private bool _soundEnabled = true;
     private IJSObjectReference? _module;
     private IJSObjectReference? _attract;
 
@@ -72,6 +75,20 @@
         _attract = await _module.InvokeAsync<IJSObjectReference>(
             "startAttract",
             new { beatsPerMinute = Config.Audio.BeatsPerMinute, secondLayer = Config.Audio.SecondLayer });
+    }
+
+    private async Task ToggleSound()
+    {
+        _soundEnabled = !_soundEnabled;
+
+        if (_soundEnabled && _attract is not null)
+        {
+            await _attract.InvokeVoidAsync("play");
+        }
+        else if (!_soundEnabled && _attract is not null)
+        {
+            await _attract.InvokeVoidAsync("pause");
+        }
     }
 
     public async ValueTask DisposeAsync()
