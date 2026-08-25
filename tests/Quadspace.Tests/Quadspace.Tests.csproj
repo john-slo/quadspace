@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Quadspace.Core\Quadspace.Core.csproj" />
+    <ProjectReference Include="..\..\src\Quadspace.Host\Quadspace.Host.csproj" />
   </ItemGroup>
 
   <ItemGroup>
