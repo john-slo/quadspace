@@ -81,18 +81,18 @@ RUN mkdir -p /app/scores && \
 USER appuser
 
 # Expose port
-EXPOSE 8080
+EXPOSE 8090
 
 # Set environment variables
-ENV DOTNET_URLS=http://+:8080 \
-    ASPNETCORE_URLS=http://+:8080 \
+ENV DOTNET_URLS=http://+:8090 \
+    ASPNETCORE_URLS=http://+:8090 \
     DOTNET_RUNNING_IN_CONTAINER=true \
     DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 
 # Health check for container orchestration
 # Checks if the application is responding to HTTP requests
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8080/api/scores/top?count=1 || exit 1
+    CMD curl -f http://localhost:8090/api/scores/top?count=1 || exit 1
 
 # Start the application
 ENTRYPOINT ["dotnet", "Quadspace.Host.dll"]
