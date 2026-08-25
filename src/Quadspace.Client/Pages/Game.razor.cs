@@ -50,7 +50,10 @@ public partial class Game : IAsyncDisposable
         }
 
         _selfRef = DotNetObjectReference.Create(this);
-        _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/game.js");
+        // Import with a stable query so the static-web-asset import map (which rewrites "./js/game.js"
+        // to a fingerprinted path the host's static-file middleware does not serve) is bypassed and the
+        // physical module is loaded directly.
+        _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/game.js?v=1");
         _loop = await _module.InvokeAsync<IJSObjectReference>(
             "start",
             _canvas,
