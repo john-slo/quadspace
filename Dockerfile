@@ -35,13 +35,16 @@ RUN dotnet build "src/Quadspace.Host/Quadspace.Host.csproj" \
 # Publish the application (bundles the client's published WASM assets into wwwroot).
 # NOTE: PublishReadyToRun must stay false — R2R/crossgen cannot be applied to the
 # Blazor WebAssembly (Client) assemblies and fails the publish with NETSDK1095.
+# DebugType=none prevents the publish step from looking for PDB files that don't exist.
 RUN dotnet publish "src/Quadspace.Host/Quadspace.Host.csproj" \
     --configuration Release \
     --no-build \
     --output /app/publish \
     -p:PublishTrimmed=false \
     -p:PublishReadyToRun=false \
-    -p:PublishSingleFile=false
+    -p:PublishSingleFile=false \
+    -p:DebugType=none \
+    -p:DebugSymbols=false
 
 # ============================================================================
 # Stage 2: Runtime (Slim)
