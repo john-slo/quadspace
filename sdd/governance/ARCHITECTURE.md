@@ -9,11 +9,11 @@
 ```
 quadspace.sln
 src/
-  Quadspace.Shared/     # Score DTOs shared by client + host (net10.0 class library)
-  Quadspace.Client/     # Blazor WebAssembly app: game simulation (C#) + UI + thin JS interop
+  Quadspace.Core/       # Pure C# library (net10.0): score DTOs, GameConfig, game engine. No UI/JS/IO.
+  Quadspace.Client/     # Blazor WebAssembly app: Razor UI + thin JS interop (canvas/audio/input)
   Quadspace.Host/       # ASP.NET Core host: serves the WASM client + score JSON API
 tests/
-  Quadspace.Tests/      # xUnit tests for game simulation + score persistence logic
+  Quadspace.Tests/      # xUnit tests for the game engine + score persistence logic
 ```
 
 The classic `.sln` format is used (not `.slnx`) so any pinned SDK builds it. Everything targets
@@ -23,16 +23,17 @@ The classic `.sln` format is used (not `.slnx`) so any pinned SDK builds it. Eve
 
 | Project | Responsibility |
 | --- | --- |
-| Quadspace.Shared | Immutable score/leaderboard DTOs (records) used by both the client and the host API. No behavior beyond data + trivial validation. |
-| Quadspace.Client | The Blazor WASM front end. Holds the C# game engine (pure simulation: ship, spheres, shots, collisions, bouncing, levels, lives, scoring), Razor pages (home/attract, game, game-over), and thin JS interop modules for canvas rendering, audio, and input. Loads `game-config.json`. |
-| Quadspace.Host | ASP.NET Core app that hosts the WASM client's static assets and exposes the minimal score API (`GET /api/scores/top`, `POST /api/scores`). Owns file-based score persistence under a server `scores/` directory. |
-| Quadspace.Tests | xUnit unit tests for the pure C# game engine and the server score service. |
+| Quadspace.Core | Pure, dependency-free C# library. Immutable score/leaderboard DTOs (records), the `GameConfig` model, and the deterministic game engine (ship, spheres, shots, collisions, bouncing, levels, lives, scoring). No UI, no JS interop, no filesystem — so it is fully unit-testable. Referenced by Client, Host, and Tests. |
+| Quadspace.Client | The Blazor WASM front end. Razor pages (home/attract, game, game-over), the per-frame loop that drives `Core` engine `Update` steps, and thin JS interop modules for canvas rendering, audio, and keyboard/gamepad input. Loads `game-config.json`. References Core. |
+| Quadspace.Host | ASP.NET Core app that hosts the WASM client's static assets and exposes the minimal score API (`GET /api/scores/top`, `POST /api/scores`). Owns file-based score persistence under a server `scores/` directory. References Core (for DTOs) and Client (to serve it). |
+| Quadspace.Tests | xUnit unit tests for the pure Core engine and the server score service. |
 
 ## Key patterns (use these; do not introduce new ones without a Decision)
 
-- **Rendering model: Blazor WebAssembly.** The game loop runs client-side. The C# engine owns all
-  simulation state and is deterministic and side-effect free (no DOM, no JS, no time-of-day) so it is
-  unit-testable; it advances via an explicit `Update(deltaSeconds, input)` step.
+- **Rendering model: Blazor WebAssembly.** The game loop runs client-side. The `Quadspace.Core`
+  engine owns all simulation state and is deterministic and side-effect free (no DOM, no JS, no
+  time-of-day, RNG injected) so it is unit-testable; it advances via an explicit
+  `Update(deltaSeconds, input)` step.
 - **Rendering/input/audio are thin JS interop.** A `requestAnimationFrame` loop in JS calls into C#
   (or C# drives via `IJSRuntime`) once per frame; canvas draw calls, Web Audio, and keyboard/gamepad
   reads live in small `.js` modules invoked through `IJSRuntime`/`[JSImport]`. No game rules in JS.

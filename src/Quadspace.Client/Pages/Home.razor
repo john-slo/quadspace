@@ -1,0 +1,124 @@
+@page "/"
+@implements IAsyncDisposable
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject GameConfig Config
+
+<PageTitle>quadspace</PageTitle>
+
+<div class="landing">
+    <p class="neon-subtitle">NEON ARCADE // SPACE SHOOTER</p>
+
+    <section class="scoreboard">
+        <h2 class="scoreboard-title">HIGH SCORES</h2>
+        @if (_loading)
+        {
+            <p class="scoreboard-status">LOADING…</p>
+        }
+        else if (_scores.Count == 0)
+        {
+            <p class="scoreboard-status">NO SCORES YET — BE THE FIRST</p>
+        }
+        else
+        {
+            <ol class="scoreboard-list">
+                @for (var i = 0; i < _scores.Count; i++)
+                {
+                    <li class="scoreboard-row">
+                        <span class="rank">@((i + 1).ToString("00"))</span>
+                        <span class="name">@_scores[i].Name</span>
+                        <span class="score">@_scores[i].Score.ToString("N0")</span>
+                    </li>
+                }
+            </ol>
+        }
+    </section>
+
+    <a class="start-link" id="press-start" href="game">PRESS START</a>
+    <button class="sound-toggle @(_soundEnabled ? "sound-on" : "sound-off")" @onclick="ToggleSound" title="@(_soundEnabled ? "Sound: ON" : "Sound: OFF")">
+        <span class="sound-glyph">@(_soundEnabled ? "♪" : "☆")</span>
+    </button>
+</div>
+
+@code {
+    private IReadOnlyList<ScoreEntry> _scores = [];
+    private bool _loading = true;
+    private bool _soundEnabled = false;
+    private IJSObjectReference? _module;
+    private IJSObjectReference? _attract;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _scores = await Http.GetFromJsonAsync<List<ScoreEntry>>("api/scores/top?count=10") ?? [];
+        }
+        catch (HttpRequestException)
+        {
+            _scores = [];
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/game.js?v=1");
+        _attract = await _module.InvokeAsync<IJSObjectReference>(
+            "startAttract",
+            new { beatsPerMinute = Config.Audio.BeatsPerMinute, secondLayer = Config.Audio.SecondLayer });
+
+        // Start with sound OFF - user must click button to enable
+        if (_attract is not null && !_soundEnabled)
+        {
+            await _attract.InvokeVoidAsync("pause");
+        }
+    }
+
+    private async Task ToggleSound()
+    {
+        _soundEnabled = !_soundEnabled;
+
+        if (_attract is not null)
+        {
+            if (_soundEnabled)
+            {
+                // Enable sound and pulse
+                await _attract.InvokeVoidAsync("play");
+            }
+            else
+            {
+                // Disable sound and pulse
+                await _attract.InvokeVoidAsync("pause");
+            }
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_attract is not null)
+            {
+                await _attract.InvokeVoidAsync("stop");
+                await _attract.DisposeAsync();
+            }
+
+            if (_module is not null)
+            {
+                await _module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // The browser side is already gone (navigation/teardown) — nothing to clean up.
+        }
+    }
+}

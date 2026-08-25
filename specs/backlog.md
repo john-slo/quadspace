@@ -39,13 +39,13 @@ lives in a central `game-config.json`.
 -->
 | Id | Slug | Priority | DependsOn | Outcome | Status |
 | --- | --- | --- | --- | --- | --- |
-| 1 | project-scaffold | P0 | - | Solution with Shared/Client/Host/Tests projects (net10.0), `game-config.json`, updated config + CI; the empty neon app builds, tests run, and `dotnet run` serves a page in the browser. | READY |
-| 2 | score-persistence | P0 | 1 | File-based score service (per-date daily JSON + insert-in-order top-100 JSON) and minimal host API (`GET /api/scores/top`, `POST /api/scores`), fully xUnit-tested. | READY |
-| 3 | home-highscores | P0 | 2 | Retro 80s arcade home/attract screen listing the top 10 high scores with an "insert coin"/start prompt. | READY |
-| 4 | game-shell-render | P0 | 1 | Canvas render loop with parallax starfield depth-field background, the ship rendered and moving via WASD, and a HUD showing score/level/lives. | READY |
-| 5 | spheres-shooting-scoring | P0 | 4 | Metallic spheres spawn from random edges with constant velocity and 90° wall bounce; tap-fire 4-way shots; a hit shrinks/destroys the sphere and adds 8 points. | READY |
-| 6 | levels-lives-gameover | P0 | 5, 2 | Level progression (8×level spheres, spawn rate = level/sec) with level intro; lives with brief invulnerability, +1 life every 8 levels, and rare life-spheres; game over triggers name entry (≤50 chars) and saves via the score API. | READY |
-| 7 | audio-toggle | P1 | 4 | Procedurally generated Web Audio background beat with an on/off toggle persisted across the session. | READY |
+| 1 | project-scaffold | P0 | - | Solution with Shared/Client/Host/Tests projects (net10.0), `game-config.json`, updated config + CI; the empty neon app builds, tests run, and `dotnet run` serves a page in the browser. | IN_PROGRESS |
+| 2 | score-persistence | P0 | 1 | File-based score service (per-date daily JSON + insert-in-order top-100 JSON) and minimal host API (`GET /api/scores/top`, `POST /api/scores`), fully xUnit-tested. | IN_PROGRESS |
+| 3 | home-highscores | P0 | 2 | Retro 80s arcade home/attract screen listing the top 10 high scores with an "insert coin"/start prompt. | IN_PROGRESS |
+| 4 | game-shell-render | P0 | 1 | Canvas render loop with parallax starfield depth-field background, the ship rendered and moving via WASD, and a HUD showing score/level/lives. | IN_PROGRESS |
+| 5 | spheres-shooting-scoring | P0 | 4 | Metallic spheres spawn from random edges with constant velocity and 90° wall bounce; tap-fire 4-way shots; a hit shrinks/destroys the sphere and adds 8 points. | IN_PROGRESS |
+| 6 | levels-lives-gameover | P0 | 5, 2 | Level progression (8×level spheres, spawn rate = level/sec) with level intro; lives with brief invulnerability, +1 life every 8 levels, and rare life-spheres; game over triggers name entry (≤50 chars) and saves via the score API. | IN_PROGRESS |
+| 7 | audio-controls-visuals | P1 | 4 | Procedural Web Audio background beat with a mute toggle (M, persisted), an on-screen controls legend (move/fire/sound), and richer ship/sphere/projectile visuals. | IN_PROGRESS |
 | 8 | gamepad-support | P1 | 5 | Gamepad support: left stick moves the ship, ABXY buttons fire in the four directions. | READY |
 
 ## Run Log
@@ -53,6 +53,12 @@ lives in a central `game-config.json`.
 | Timestamp (UTC) | Event | Feature | Note |
 | --- | --- | --- | --- |
 | 2026-08-25T09:27:00Z | backlog created | - | drafted during BACKLOG; approved by human checkpoint |
+| 2026-08-25T09:30:00Z | feature started | 1-project-scaffold | on shared branch feature/initial-game (epic issue #1) |
+| 2026-08-25T10:24:00Z | feature verified | 2-score-persistence | score API + file store, 18 tests; on PR #2 |
+| 2026-08-25T10:30:00Z | feature verified | 3-home-highscores | retro top-10 leaderboard home; on PR #2 |
+| 2026-08-25T10:40:00Z | feature verified | 4-game-shell-render | canvas loop, starfield, ship+WASD, HUD; on PR #2 |
+| 2026-08-25T10:52:00Z | feature verified | 5-spheres-shooting-scoring | spheres/bounce/shoot/score, 34 tests; on PR #2 |
+| 2026-08-25T11:05:00Z | feature verified | 6-levels-lives-gameover | levels/lives/game-over+name entry, 42 tests; on PR #2 |
 
 ## Decisions
 <!-- Required to add, remove, or re-scope a backlog row after the human checkpoint. Otherwise "None". -->
