@@ -1,11 +1,19 @@
-// quadspace canvas render loop. Owns rendering, WASD input, and the animated parallax starfield.
-// All gameplay state is authoritative in C#: each frame we call the .NET `Tick` and draw what it returns.
+// quadspace canvas render loop. Owns rendering, input (WASD move + arrow fire), and the animated
+// parallax starfield. All gameplay state is authoritative in C#: each frame we call the .NET `Tick`
+// (movement) and draw what it returns; arrow presses call `Fire` directly.
 
 const MOVE_KEYS = {
     KeyW: [0, -1],
     KeyS: [0, 1],
     KeyA: [-1, 0],
     KeyD: [1, 0],
+};
+
+const FIRE_KEYS = {
+    ArrowUp: [0, -1],
+    ArrowDown: [0, 1],
+    ArrowLeft: [-1, 0],
+    ArrowRight: [1, 0],
 };
 
 const clampAxis = (v) => (v < -1 ? -1 : v > 1 ? 1 : v);
@@ -27,6 +35,22 @@ function buildStarfield(arena, starfield) {
     return layers;
 }
 
+function drawStarfield(ctx, canvas, starfield, dt) {
+    for (const layer of starfield) {
+        ctx.fillStyle = layer.color;
+        for (const s of layer.list) {
+            s.y += layer.speed * dt;
+            if (s.y > canvas.height) {
+                s.y = 0;
+                s.x = Math.random() * canvas.width;
+            }
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, layer.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+}
+
 function drawShip(ctx, x, y, r) {
     ctx.save();
     ctx.translate(x, y);
@@ -46,25 +70,66 @@ function drawShip(ctx, x, y, r) {
     ctx.restore();
 }
 
+function drawSphere(ctx, s) {
+    if (s.radius <= 0.2) {
+        return;
+    }
+    ctx.save();
+    const gradient = ctx.createRadialGradient(
+        s.x - s.radius * 0.35, s.y - s.radius * 0.35, s.radius * 0.1,
+        s.x, s.y, s.radius);
+    gradient.addColorStop(0, '#f4f8ff');
+    gradient.addColorStop(0.45, '#9fb4c8');
+    gradient.addColorStop(1, '#2b3550');
+    ctx.fillStyle = gradient;
+    ctx.shadowColor = 'rgba(160, 200, 255, 0.6)';
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+}
+
+function drawProjectile(ctx, p) {
+    ctx.save();
+    ctx.shadowColor = '#ff2fd0';
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = '#ff2fd0';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+}
+
+function drawHud(ctx, model) {
+    ctx.save();
+    ctx.font = '20px Consolas, monospace';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#eaf6ff';
+    ctx.shadowColor = '#16f2f2';
+    ctx.shadowBlur = 8;
+    ctx.fillText(`SCORE ${model.score}`, 20, 16);
+    ctx.textAlign = 'center';
+    ctx.fillText(`LEVEL ${model.level}`, ctx.canvas.width / 2, 16);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#ff2fd0';
+    ctx.shadowColor = '#ff2fd0';
+    ctx.fillText(`LIVES ${model.lives}`, ctx.canvas.width - 20, 16);
+    ctx.restore();
+}
+
 function draw(ctx, canvas, starfield, dt, model) {
     ctx.fillStyle = '#05010f';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    for (const layer of starfield) {
-        ctx.fillStyle = layer.color;
-        for (const s of layer.list) {
-            s.y += layer.speed * dt;
-            if (s.y > canvas.height) {
-                s.y = 0;
-                s.x = Math.random() * canvas.width;
-            }
-            ctx.beginPath();
-            ctx.arc(s.x, s.y, layer.size, 0, Math.PI * 2);
-            ctx.fill();
-        }
+    drawStarfield(ctx, canvas, starfield, dt);
+    for (const s of model.spheres) {
+        drawSphere(ctx, s);
     }
-
+    for (const p of model.projectiles) {
+        drawProjectile(ctx, p);
+    }
     drawShip(ctx, model.shipX, model.shipY, model.shipRadius);
+    drawHud(ctx, model);
 }
 
 export function start(canvas, arena, starfield, dotNetRef) {
@@ -93,6 +158,12 @@ export function start(canvas, arena, starfield, dotNetRef) {
         if (MOVE_KEYS[e.code]) {
             pressed.add(e.code);
             recompute();
+            e.preventDefault();
+        } else if (FIRE_KEYS[e.code]) {
+            if (!e.repeat) {
+                const [dx, dy] = FIRE_KEYS[e.code];
+                dotNetRef.invokeMethod('Fire', dx, dy);
+            }
             e.preventDefault();
         }
     };

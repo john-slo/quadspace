@@ -21,7 +21,7 @@ public sealed record ArenaConfig(double Width, double Height);
 public sealed record ShipConfig(double Speed, double Radius, int StartLives, double InvulnerabilitySeconds);
 
 /// <summary>Metallic sphere tuning. Spawn rate per second = level * <see cref="SpawnRatePerLevelPerSecond"/>.</summary>
-public sealed record SphereConfig(double Speed, double Radius, double SpawnRatePerLevelPerSecond);
+public sealed record SphereConfig(double Speed, double Radius, double SpawnRatePerLevelPerSecond, double ShrinkSeconds);
 
 /// <summary>Fired shot tuning.</summary>
 public sealed record ProjectileConfig(double Speed, double Radius, int MaxOnScreen, double CooldownSeconds);

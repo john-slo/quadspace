@@ -144,25 +144,6 @@ html, body {
     box-shadow: 0 0 30px rgba(138, 43, 226, 0.4);
 }
 
-.hud {
-    position: absolute;
-    top: 1rem;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: center;
-    gap: 2.5rem;
-    color: #eaf6ff;
-    letter-spacing: 0.15em;
-    pointer-events: none;
-    text-shadow: 0 0 8px var(--neon-cyan);
-}
-
-    .hud-item b {
-        color: var(--neon-magenta);
-        text-shadow: 0 0 8px var(--neon-magenta);
-    }
-
 .game-exit {
     position: absolute;
     bottom: 1rem;

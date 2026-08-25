@@ -9,7 +9,7 @@ public sealed class GameEngineTests
         new(
             new ArenaConfig(width, height),
             new ShipConfig(speed, radius, startLives, InvulnerabilitySeconds: 2),
-            new SphereConfig(Speed: 50, Radius: 10, SpawnRatePerLevelPerSecond: 1),
+            new SphereConfig(Speed: 50, Radius: 10, SpawnRatePerLevelPerSecond: 1, ShrinkSeconds: 0.15),
             new ProjectileConfig(Speed: 200, Radius: 3, MaxOnScreen: 32, CooldownSeconds: 0.1),
             new ScoringConfig(PointsPerSphere: 8, SpheresPerLevelMultiplier: 8),
             new LivesConfig(ExtraLifeEveryLevels: 8, LifeSphereSpawnChance: 0.02, MaxLives: 9),

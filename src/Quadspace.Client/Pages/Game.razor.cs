@@ -50,7 +50,36 @@ public partial class Game : IAsyncDisposable
     public RenderModel Tick(double dtSeconds, double moveX, double moveY)
     {
         _engine.Update(dtSeconds, moveX, moveY);
-        return new RenderModel(_engine.ShipX, _engine.ShipY, Config.Ship.Radius);
+        return BuildRenderModel();
+    }
+
+    /// <summary>Fires a shot in the given axis direction (invoked on a non-repeating arrow keydown).</summary>
+    [JSInvokable]
+    public void Fire(double directionX, double directionY) => _engine.Fire(directionX, directionY);
+
+    private RenderModel BuildRenderModel()
+    {
+        var spheres = new List<SphereModel>(_engine.Spheres.Count);
+        foreach (var s in _engine.Spheres)
+        {
+            spheres.Add(new SphereModel(s.X, s.Y, s.Radius * s.ShrinkFraction));
+        }
+
+        var projectiles = new List<ProjectileModel>(_engine.Projectiles.Count);
+        foreach (var p in _engine.Projectiles)
+        {
+            projectiles.Add(new ProjectileModel(p.X, p.Y, p.Radius));
+        }
+
+        return new RenderModel(
+            _engine.ShipX,
+            _engine.ShipY,
+            Config.Ship.Radius,
+            spheres,
+            projectiles,
+            _engine.Score,
+            _engine.Level,
+            _engine.Lives);
     }
 
     public async ValueTask DisposeAsync()
@@ -76,6 +105,20 @@ public partial class Game : IAsyncDisposable
         _selfRef?.Dispose();
     }
 
-    /// <summary>Minimal per-frame render payload marshaled to JS (camelCase).</summary>
-    public sealed record RenderModel(double ShipX, double ShipY, double ShipRadius);
+    /// <summary>Per-frame render payload marshaled to JS (camelCase).</summary>
+    public sealed record RenderModel(
+        double ShipX,
+        double ShipY,
+        double ShipRadius,
+        IReadOnlyList<SphereModel> Spheres,
+        IReadOnlyList<ProjectileModel> Projectiles,
+        int Score,
+        int Level,
+        int Lives);
+
+    /// <summary>A sphere to draw (radius already reflects any shrink animation).</summary>
+    public sealed record SphereModel(double X, double Y, double Radius);
+
+    /// <summary>A projectile to draw.</summary>
+    public sealed record ProjectileModel(double X, double Y, double Radius);
 }
