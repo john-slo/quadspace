@@ -17,7 +17,7 @@ COPY ["src/Quadspace.Host/Quadspace.Host.csproj", "src/Quadspace.Host/"]
 
 # Restore dependencies
 # This layer is cached until project files change
-RUN dotnet restore "Quadspace.Host/Quadspace.Host.csproj"
+RUN dotnet restore "src/Quadspace.Host/Quadspace.Host.csproj"
 
 # Copy all source code
 COPY . .
