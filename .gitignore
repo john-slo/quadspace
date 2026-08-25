@@ -29,4 +29,6 @@ diff.txt
 *.tmp
 *.scratch
 *.sdd.tmp
-/src/Quadspace.Host/scores
+
+# --- Runtime score data (server-side JSON files) ---
+scores/
