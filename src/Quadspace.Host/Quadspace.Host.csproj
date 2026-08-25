@@ -13,7 +13,10 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Ensure static web asset placeholders in index.html are replaced with actual fingerprints -->
     <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
+    <!-- Don't fingerprint the index.html itself so the placeholder replacement works -->
+    <StaticWebAssetOnBuildManifest>false</StaticWebAssetOnBuildManifest>
   </PropertyGroup>
 
 </Project>

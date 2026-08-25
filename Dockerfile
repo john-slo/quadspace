@@ -36,6 +36,7 @@ RUN dotnet build "src/Quadspace.Host/Quadspace.Host.csproj" \
 # DebugType=none prevents the publish step from looking for PDB files that don't exist.
 # We must NOT use --no-build here because the _framework folder generation requires
 # the full publish pipeline to run, which includes bundling the Blazor client.
+# UseAppHost=false prevents self-contained publish which we don't want in a container.
 RUN dotnet publish "src/Quadspace.Host/Quadspace.Host.csproj" \
     --configuration Release \
     --output /app/publish \
@@ -43,7 +44,8 @@ RUN dotnet publish "src/Quadspace.Host/Quadspace.Host.csproj" \
     -p:PublishReadyToRun=false \
     -p:PublishSingleFile=false \
     -p:DebugType=none \
-    -p:DebugSymbols=false
+    -p:DebugSymbols=false \
+    -p:UseAppHost=false
 
 # ============================================================================
 # Stage 2: Runtime (Slim)
