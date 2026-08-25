@@ -12,7 +12,8 @@ public sealed record GameConfig(
     ScoringConfig Scoring,
     LivesConfig Lives,
     LevelsConfig Levels,
-    StarfieldConfig Starfield);
+    StarfieldConfig Starfield,
+    AudioConfig Audio);
 
 /// <summary>Bounded 2D play area, in world units (pixels at 1:1 render scale).</summary>
 public sealed record ArenaConfig(double Width, double Height);
@@ -20,8 +21,18 @@ public sealed record ArenaConfig(double Width, double Height);
 /// <summary>Player ship tuning.</summary>
 public sealed record ShipConfig(double Speed, double Radius, int StartLives, double InvulnerabilitySeconds);
 
-/// <summary>Metallic sphere tuning. Spawn rate per second = level * <see cref="SpawnRatePerLevelPerSecond"/>.</summary>
-public sealed record SphereConfig(double Speed, double Radius, double SpawnRatePerLevelPerSecond, double ShrinkSeconds);
+/// <summary>
+/// Metallic sphere tuning. Spawn rate per second = level * <see cref="SpawnRatePerLevelPerSecond"/>.
+/// When <see cref="SpawnOnBeat"/> is true, accumulated spawns are released on the musical beat instead
+/// of continuously; <see cref="BeatPulse"/> is the visual pulse amount applied on each beat.
+/// </summary>
+public sealed record SphereConfig(
+    double Speed,
+    double Radius,
+    double SpawnRatePerLevelPerSecond,
+    double ShrinkSeconds,
+    bool SpawnOnBeat,
+    double BeatPulse);
 
 /// <summary>Fired shot tuning.</summary>
 public sealed record ProjectileConfig(double Speed, double Radius, int MaxOnScreen, double CooldownSeconds);
@@ -37,3 +48,6 @@ public sealed record LevelsConfig(double IntroSeconds);
 
 /// <summary>Parallax "space depth-field" background tuning.</summary>
 public sealed record StarfieldConfig(int Layers, int StarsPerLayer);
+
+/// <summary>Audio tuning: the background beat tempo and whether the second melodic layer plays.</summary>
+public sealed record AudioConfig(int BeatsPerMinute, bool SecondLayer);

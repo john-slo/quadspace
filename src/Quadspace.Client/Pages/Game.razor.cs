@@ -59,6 +59,12 @@ public partial class Game : IAsyncDisposable
             _canvas,
             new { width = _width, height = _height },
             new { layers = Config.Starfield.Layers, starsPerLayer = Config.Starfield.StarsPerLayer },
+            new
+            {
+                beatsPerMinute = Config.Audio.BeatsPerMinute,
+                secondLayer = Config.Audio.SecondLayer,
+                beatPulse = Config.Sphere.BeatPulse,
+            },
             _selfRef);
     }
 
@@ -73,6 +79,10 @@ public partial class Game : IAsyncDisposable
     /// <summary>Fires a shot in the given axis direction (invoked on a non-repeating arrow keydown).</summary>
     [JSInvokable]
     public void Fire(double directionX, double directionY) => _engine.Fire(directionX, directionY);
+
+    /// <summary>Releases beat-quantized sphere spawns (invoked by the audio layer on each beat).</summary>
+    [JSInvokable]
+    public void OnBeat() => _engine.OnBeat();
 
     /// <summary>Invoked by JS when the run ends; shows the name-entry overlay.</summary>
     [JSInvokable]

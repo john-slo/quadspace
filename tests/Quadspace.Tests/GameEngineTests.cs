@@ -9,12 +9,13 @@ public sealed class GameEngineTests
         new(
             new ArenaConfig(width, height),
             new ShipConfig(speed, radius, startLives, InvulnerabilitySeconds: 2),
-            new SphereConfig(Speed: 50, Radius: 10, SpawnRatePerLevelPerSecond: 1, ShrinkSeconds: 0.15),
+            new SphereConfig(Speed: 50, Radius: 10, SpawnRatePerLevelPerSecond: 1, ShrinkSeconds: 0.15, SpawnOnBeat: false, BeatPulse: 0),
             new ProjectileConfig(Speed: 200, Radius: 3, MaxOnScreen: 32, CooldownSeconds: 0.1),
             new ScoringConfig(PointsPerSphere: 8, SpheresPerLevelMultiplier: 8),
             new LivesConfig(ExtraLifeEveryLevels: 8, LifeSphereSpawnChance: 0.02, MaxLives: 9),
             new LevelsConfig(IntroSeconds: 2),
-            new StarfieldConfig(Layers: 3, StarsPerLayer: 10));
+            new StarfieldConfig(Layers: 3, StarsPerLayer: 10),
+            new AudioConfig(BeatsPerMinute: 128, SecondLayer: true));
 
     [Fact]
     public void New_Engine_StartsCenteredWithConfiguredState()

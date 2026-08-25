@@ -159,11 +159,37 @@ public sealed class GameEngine
         }
 
         _spawnAccumulator += dtSeconds * rate;
+
+        // When spawns are quantized to the beat, hold them until OnBeat releases them.
+        if (_config.Sphere.SpawnOnBeat)
+        {
+            return;
+        }
+
+        FlushSpawns();
+    }
+
+    private void FlushSpawns()
+    {
         while (_spawnAccumulator >= 1)
         {
             _spawnAccumulator -= 1;
             _spheres.Add(CreateSphereFromEdge());
         }
+    }
+
+    /// <summary>
+    /// Releases any accumulated beat-quantized spawns. Called from the audio layer on each beat when
+    /// <c>sphere.spawnOnBeat</c> is enabled; a no-op during a level intro, game over, or when disabled.
+    /// </summary>
+    public void OnBeat()
+    {
+        if (IsGameOver || IsLevelIntro || !_config.Sphere.SpawnOnBeat)
+        {
+            return;
+        }
+
+        FlushSpawns();
     }
 
     private Sphere CreateSphereFromEdge()

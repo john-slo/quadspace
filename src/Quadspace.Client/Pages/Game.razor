@@ -1,5 +1,5 @@
 @page "/game"
-
+<h1 class="neon-title">QUADSPACE</h1>
 <div class="game-shell">
     <canvas @ref="_canvas" class="game-canvas" width="@_width" height="@_height"></canvas>
     <a class="game-exit" href="">◄ HOME</a>
@@ -8,6 +8,7 @@
         <span>MOVE <b>W A S D</b></span>
         <span>FIRE <b>&uarr; &darr; &larr; &rarr;</b></span>
         <span>SOUND <b>M</b> <span id="sound-state">--</span></span>
+        <span>SFX <b>N</b> <span id="sfx-state">--</span></span>
     </div>
 
     @if (_gameOver)

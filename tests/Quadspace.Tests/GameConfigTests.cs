@@ -26,5 +26,8 @@ public sealed class GameConfigTests
         Assert.True(config.Arena is { Width: > 0, Height: > 0 });
         Assert.InRange(config.Lives.LifeSphereSpawnChance, 0.0, 1.0);
         Assert.True(config.Starfield is { Layers: > 0, StarsPerLayer: > 0 });
+        Assert.True(config.Sphere.SpawnOnBeat);
+        Assert.Equal(128, config.Audio.BeatsPerMinute);
+        Assert.True(config.Audio.SecondLayer);
     }
 }

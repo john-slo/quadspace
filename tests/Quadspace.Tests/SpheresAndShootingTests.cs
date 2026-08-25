@@ -16,12 +16,13 @@ public sealed class SpheresAndShootingTests
         new(
             new ArenaConfig(arena, arena),
             new ShipConfig(Speed: 200, Radius: 16, StartLives: 3, InvulnerabilitySeconds: 2),
-            new SphereConfig(sphereSpeed, sphereRadius, SpawnRatePerLevelPerSecond: 1, shrinkSeconds),
+            new SphereConfig(sphereSpeed, sphereRadius, SpawnRatePerLevelPerSecond: 1, shrinkSeconds, SpawnOnBeat: false, BeatPulse: 0),
             new ProjectileConfig(projectileSpeed, projectileRadius, maxOnScreen, CooldownSeconds: 0.1),
             new ScoringConfig(PointsPerSphere: 8, SpheresPerLevelMultiplier: 8),
             new LivesConfig(ExtraLifeEveryLevels: 8, LifeSphereSpawnChance: 0.02, MaxLives: 9),
             new LevelsConfig(IntroSeconds: 0),
-            new StarfieldConfig(Layers: 3, StarsPerLayer: 10));
+            new StarfieldConfig(Layers: 3, StarsPerLayer: 10),
+            new AudioConfig(BeatsPerMinute: 128, SecondLayer: true));
 
     [Fact]
     public void Update_AtLevelOne_SpawnsOneSpherePerSecond()

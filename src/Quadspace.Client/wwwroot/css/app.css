@@ -125,6 +125,13 @@ html, body {
     border-radius: 6px;
 }
 
+#press-start {
+    display: inline-block;
+    transition: transform 0.16s ease-out;
+    color: var(--neon-magenta);
+    text-shadow: 0 0 10px var(--neon-magenta);
+}
+
 .game-shell {
     position: relative;
     width: 100vw;
@@ -177,7 +184,8 @@ html, body {
         font-weight: 700;
     }
 
-    .controls-legend #sound-state {
+    .controls-legend #sound-state,
+    .controls-legend #sfx-state {
         color: var(--neon-magenta);
         text-shadow: 0 0 6px var(--neon-magenta);
     }

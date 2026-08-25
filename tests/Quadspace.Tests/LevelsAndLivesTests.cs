@@ -20,12 +20,13 @@ public sealed class LevelsAndLivesTests
         new(
             new ArenaConfig(arena, arena),
             new ShipConfig(Speed: 200, Radius: shipRadius, StartLives: startLives, InvulnerabilitySeconds: invuln),
-            new SphereConfig(sphereSpeed, sphereRadius, SpawnRatePerLevelPerSecond: 1, ShrinkSeconds: 0.15),
+            new SphereConfig(sphereSpeed, sphereRadius, SpawnRatePerLevelPerSecond: 1, ShrinkSeconds: 0.15, SpawnOnBeat: false, BeatPulse: 0),
             new ProjectileConfig(Speed: 300, Radius: 4, MaxOnScreen: 8, CooldownSeconds: 0.1),
             new ScoringConfig(PointsPerSphere: 8, SpheresPerLevelMultiplier: multiplier),
             new LivesConfig(extraLifeEveryLevels, lifeChance, maxLives),
             new LevelsConfig(introSeconds),
-            new StarfieldConfig(Layers: 3, StarsPerLayer: 10));
+            new StarfieldConfig(Layers: 3, StarsPerLayer: 10),
+            new AudioConfig(BeatsPerMinute: 128, SecondLayer: true));
 
     /// <summary>Spawns a sphere, parks it on the ship, and shoots it — destroying it without a ship hit.</summary>
     private static void ShootDownOneSphere(GameEngine engine)

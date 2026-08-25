@@ -1,5 +1,8 @@
 ﻿@page "/"
+@implements IAsyncDisposable
 @inject HttpClient Http
+@inject IJSRuntime JS
+@inject GameConfig Config
 
 <PageTitle>quadspace</PageTitle>
 
@@ -32,13 +35,15 @@
         }
     </section>
 
-    <a class="start-link neon-blink" href="game">PRESS START</a>
-    <p class="neon-hint">INSERT COIN</p>
+    <a class="start-link" id="press-start" href="game">PRESS START</a>
+    <p class="neon-hint">INSERT COIN — PRESS ANY KEY FOR SOUND</p>
 </div>
 
 @code {
     private IReadOnlyList<ScoreEntry> _scores = [];
     private bool _loading = true;
+    private IJSObjectReference? _module;
+    private IJSObjectReference? _attract;
 
     protected override async Task OnInitializedAsync()
     {
@@ -53,6 +58,40 @@
         finally
         {
             _loading = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/game.js?v=1");
+        _attract = await _module.InvokeAsync<IJSObjectReference>(
+            "startAttract",
+            new { beatsPerMinute = Config.Audio.BeatsPerMinute, secondLayer = Config.Audio.SecondLayer });
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_attract is not null)
+            {
+                await _attract.InvokeVoidAsync("stop");
+                await _attract.DisposeAsync();
+            }
+
+            if (_module is not null)
+            {
+                await _module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // The browser side is already gone (navigation/teardown) — nothing to clean up.
         }
     }
 }

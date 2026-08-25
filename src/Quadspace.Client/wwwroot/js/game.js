@@ -1,7 +1,7 @@
 // quadspace canvas render loop. Owns rendering, input (WASD move + arrow fire), the animated parallax
-// starfield, and a procedural Web Audio background beat. All gameplay state is authoritative in C#:
-// each frame we call the .NET `Tick` (movement) and draw what it returns; arrows call `Fire`; `M`
-// toggles sound; game over calls `EndGame`.
+// starfield, a procedural Web Audio background beat (two layers), and sound effects. All gameplay
+// state is authoritative in C#: each frame we call the .NET `Tick`; arrows call `Fire`; the audio beat
+// calls `OnBeat` (beat-quantized spawns); `M` toggles music; `N` toggles SFX; game over calls `EndGame`.
 
 const MOVE_KEYS = {
     KeyW: [0, -1],
@@ -20,15 +20,19 @@ const FIRE_KEYS = {
 const clampAxis = (v) => (v < -1 ? -1 : v > 1 ? 1 : v);
 
 // ---------------------------------------------------------------------------
-// Procedural background beat (Web Audio). Lazily created and resumed on the
-// first user gesture; mute state persists in localStorage.
+// Procedural background beat (Web Audio): kick + bass + arp, plus an optional
+// melodic second layer. Fires `onBeat` on each quarter note (for beat-synced
+// spawning and the visual pulse). Mute state persists in localStorage.
 // ---------------------------------------------------------------------------
-function createBeat() {
+function createBeat(options) {
     const MASTER_VOLUME = 0.22;
-    const TEMPO = 128;
-    const stepDuration = 60 / TEMPO / 2; // eighth notes
+    const tempo = options.tempo || 128;
+    const secondLayer = options.secondLayer !== false;
+    const onBeat = options.onBeat || (() => { });
+    const stepDuration = 60 / tempo / 2; // eighth notes
     const bass = [55.0, 55.0, 65.41, 55.0, 73.42, 55.0, 82.41, 65.41];
     const arp = [220.0, 261.63, 329.63, 440.0];
+    const lead = [659.25, 0, 783.99, 880.0, 0, 783.99, 659.25, 0, 587.33, 0, 659.25, 0, 523.25, 0, 587.33, 0];
 
     let ctx = null;
     let master = null;
@@ -78,9 +82,16 @@ function createBeat() {
             const s = step % 8;
             if (s % 4 === 0) {
                 kick(nextTime);
+                setTimeout(onBeat, Math.max(0, (nextTime - ctx.currentTime) * 1000));
             }
             tone(bass[s], nextTime, stepDuration * 0.9, 'sawtooth', 0.18);
             tone(arp[Math.floor(step / 2) % arp.length] * 2, nextTime, stepDuration * 0.5, 'square', 0.05);
+            if (secondLayer) {
+                const note = lead[step % lead.length];
+                if (note) {
+                    tone(note, nextTime, stepDuration * 1.4, 'triangle', 0.05);
+                }
+            }
             nextTime += stepDuration;
             step++;
         }
@@ -123,6 +134,73 @@ function createBeat() {
                 ctx.close();
                 ctx = null;
                 master = null;
+            }
+        },
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Sound effects (fire / hit), toggled independently from the music.
+// ---------------------------------------------------------------------------
+function createSfx() {
+    let ctx = null;
+    let off = localStorage.getItem('quadspace-sfx') === '1';
+
+    const ensure = () => {
+        if (!ctx) {
+            const Ctor = window.AudioContext || window.webkitAudioContext;
+            ctx = new Ctor();
+        }
+        if (ctx.state === 'suspended') {
+            ctx.resume();
+        }
+    };
+
+    const blip = (from, to, dur, type, volume) => {
+        if (off) {
+            return;
+        }
+        ensure();
+        const t = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(from, t);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(1, to), t + dur);
+        gain.gain.setValueAtTime(volume, t);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + dur + 0.02);
+    };
+
+    const reflectState = () => {
+        const indicator = document.getElementById('sfx-state');
+        if (indicator) {
+            indicator.textContent = off ? 'OFF' : 'ON';
+        }
+    };
+
+    return {
+        fire() {
+            blip(520, 180, 0.06, 'triangle', 0.05);
+        },
+        hit() {
+            blip(150, 42, 0.18, 'sine', 0.16);
+        },
+        shipHit() {
+            blip(320, 55, 0.35, 'sawtooth', 0.22);
+        },
+        toggle() {
+            off = !off;
+            localStorage.setItem('quadspace-sfx', off ? '1' : '0');
+            reflectState();
+        },
+        reflectState,
+        stop() {
+            if (ctx) {
+                ctx.close();
+                ctx = null;
             }
         },
     };
@@ -213,14 +291,15 @@ function drawShip(ctx, x, y, r) {
     ctx.restore();
 }
 
-function drawSphere(ctx, s) {
-    if (s.radius <= 0.2) {
+function drawSphere(ctx, s, scale) {
+    const r = s.radius * scale;
+    if (r <= 0.2) {
         return;
     }
     ctx.save();
     const body = ctx.createRadialGradient(
-        s.x - s.radius * 0.4, s.y - s.radius * 0.4, s.radius * 0.1,
-        s.x, s.y, s.radius);
+        s.x - r * 0.4, s.y - r * 0.4, r * 0.1,
+        s.x, s.y, r);
     if (s.isLife) {
         body.addColorStop(0, '#eaffea');
         body.addColorStop(0.5, '#57e08a');
@@ -235,21 +314,21 @@ function drawSphere(ctx, s) {
     ctx.fillStyle = body;
     ctx.shadowBlur = 10;
     ctx.beginPath();
-    ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+    ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
     ctx.fill();
 
     // Rim light.
     ctx.shadowBlur = 0;
-    ctx.lineWidth = Math.max(1, s.radius * 0.08);
+    ctx.lineWidth = Math.max(1, r * 0.08);
     ctx.strokeStyle = s.isLife ? 'rgba(180, 255, 200, 0.5)' : 'rgba(200, 225, 255, 0.45)';
     ctx.beginPath();
-    ctx.arc(s.x, s.y, s.radius * 0.94, 0, Math.PI * 2);
+    ctx.arc(s.x, s.y, r * 0.94, 0, Math.PI * 2);
     ctx.stroke();
 
     // Specular highlight.
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
     ctx.beginPath();
-    ctx.arc(s.x - s.radius * 0.35, s.y - s.radius * 0.35, Math.max(1, s.radius * 0.16), 0, Math.PI * 2);
+    ctx.arc(s.x - r * 0.35, s.y - r * 0.35, Math.max(1, r * 0.16), 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 }
@@ -312,12 +391,12 @@ function drawLevelIntro(ctx, level) {
     ctx.restore();
 }
 
-function draw(ctx, canvas, starfield, dt, model, now) {
+function draw(ctx, canvas, starfield, dt, model, now, pulse) {
     ctx.fillStyle = '#05010f';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     drawStarfield(ctx, canvas, starfield, dt);
     for (const s of model.spheres) {
-        drawSphere(ctx, s);
+        drawSphere(ctx, s, pulse);
     }
     for (const p of model.projectiles) {
         drawProjectile(ctx, p);
@@ -335,13 +414,31 @@ function draw(ctx, canvas, starfield, dt, model, now) {
 // ---------------------------------------------------------------------------
 // Loop
 // ---------------------------------------------------------------------------
-export function start(canvas, arena, starfield, dotNetRef) {
+export function start(canvas, arena, starfield, options, dotNetRef) {
     canvas.width = arena.width;
     canvas.height = arena.height;
     const ctx = canvas.getContext('2d');
     const layers = buildStarfield(arena, starfield);
-    const beat = createBeat();
+    const beatPulse = options.beatPulse || 0;
+
+    let running = true;
+    let lastBeatAt = performance.now();
+    const onBeat = () => {
+        if (!running) {
+            return;
+        }
+        lastBeatAt = performance.now();
+        try {
+            dotNetRef.invokeMethod('OnBeat');
+        } catch {
+            // Component was disposed between scheduling and firing the beat.
+        }
+    };
+
+    const beat = createBeat({ tempo: options.beatsPerMinute, secondLayer: options.secondLayer, onBeat });
+    const sfx = createSfx();
     beat.reflectState();
+    sfx.reflectState();
 
     const pressed = new Set();
     const move = { x: 0, y: 0 };
@@ -369,11 +466,17 @@ export function start(canvas, arena, starfield, dotNetRef) {
             if (!e.repeat) {
                 const [dx, dy] = FIRE_KEYS[e.code];
                 dotNetRef.invokeMethod('Fire', dx, dy);
+                sfx.fire();
             }
             e.preventDefault();
         } else if (e.code === 'KeyM') {
             if (!e.repeat) {
                 beat.toggleMuted();
+            }
+            e.preventDefault();
+        } else if (e.code === 'KeyN') {
+            if (!e.repeat) {
+                sfx.toggle();
             }
             e.preventDefault();
         }
@@ -386,15 +489,17 @@ export function start(canvas, arena, starfield, dotNetRef) {
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
 
-    let running = true;
     const stop = () => {
         running = false;
         window.removeEventListener('keydown', onKeyDown);
         window.removeEventListener('keyup', onKeyUp);
         beat.stop();
+        sfx.stop();
     };
 
     let last = performance.now();
+    let prevScore = 0;
+    let prevLives = null;
     const frame = (now) => {
         if (!running) {
             return;
@@ -402,7 +507,16 @@ export function start(canvas, arena, starfield, dotNetRef) {
         const dt = Math.min(0.05, (now - last) / 1000);
         last = now;
         const model = dotNetRef.invokeMethod('Tick', dt, move.x, move.y);
-        draw(ctx, canvas, layers, dt, model, now);
+        if (model.score > prevScore) {
+            sfx.hit();
+        }
+        prevScore = model.score;
+        if (prevLives !== null && model.lives < prevLives) {
+            sfx.shipHit();
+        }
+        prevLives = model.lives;
+        const pulse = 1 + beatPulse * Math.exp(-6 * (now - lastBeatAt) / 1000);
+        draw(ctx, canvas, layers, dt, model, now, pulse);
         if (model.isGameOver) {
             stop();
             dotNetRef.invokeMethodAsync('EndGame');
@@ -413,4 +527,47 @@ export function start(canvas, arena, starfield, dotNetRef) {
     requestAnimationFrame(frame);
 
     return { stop };
+}
+
+// ---------------------------------------------------------------------------
+// Home / attract screen: plays the same background beat and pulses the
+// PRESS START element (id="press-start") in sync with each beat. Audio starts
+// on the first user gesture (browser autoplay policy).
+// ---------------------------------------------------------------------------
+export function startAttract(options) {
+    let resetTimer = null;
+    const pulse = () => {
+        const el = document.getElementById('press-start');
+        if (!el) {
+            return;
+        }
+        el.style.transform = 'scale(1.22)';
+        if (resetTimer) {
+            clearTimeout(resetTimer);
+        }
+        resetTimer = setTimeout(() => {
+            const still = document.getElementById('press-start');
+            if (still) {
+                still.style.transform = 'scale(1)';
+            }
+        }, 140);
+    };
+
+    const beat = createBeat({ tempo: options.beatsPerMinute, secondLayer: options.secondLayer, onBeat: pulse });
+    beat.reflectState();
+
+    const startOnce = () => beat.start();
+    window.addEventListener('pointerdown', startOnce, { once: true });
+    window.addEventListener('keydown', startOnce, { once: true });
+
+    return {
+        stop() {
+            window.removeEventListener('pointerdown', startOnce);
+            window.removeEventListener('keydown', startOnce);
+            if (resetTimer) {
+                clearTimeout(resetTimer);
+            }
+            beat.stop();
+        },
+    };
 }
