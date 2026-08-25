@@ -1,6 +1,6 @@
 // quadspace canvas render loop. Owns rendering, input (WASD move + arrow fire), and the animated
 // parallax starfield. All gameplay state is authoritative in C#: each frame we call the .NET `Tick`
-// (movement) and draw what it returns; arrow presses call `Fire` directly.
+// (movement) and draw what it returns; arrow presses call `Fire` directly; game over calls `EndGame`.
 
 const MOVE_KEYS = {
     KeyW: [0, -1],
@@ -78,11 +78,18 @@ function drawSphere(ctx, s) {
     const gradient = ctx.createRadialGradient(
         s.x - s.radius * 0.35, s.y - s.radius * 0.35, s.radius * 0.1,
         s.x, s.y, s.radius);
-    gradient.addColorStop(0, '#f4f8ff');
-    gradient.addColorStop(0.45, '#9fb4c8');
-    gradient.addColorStop(1, '#2b3550');
+    if (s.isLife) {
+        gradient.addColorStop(0, '#eaffea');
+        gradient.addColorStop(0.45, '#57e08a');
+        gradient.addColorStop(1, '#0b3a22');
+        ctx.shadowColor = 'rgba(87, 224, 138, 0.8)';
+    } else {
+        gradient.addColorStop(0, '#f4f8ff');
+        gradient.addColorStop(0.45, '#9fb4c8');
+        gradient.addColorStop(1, '#2b3550');
+        ctx.shadowColor = 'rgba(160, 200, 255, 0.6)';
+    }
     ctx.fillStyle = gradient;
-    ctx.shadowColor = 'rgba(160, 200, 255, 0.6)';
     ctx.shadowBlur = 8;
     ctx.beginPath();
     ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
@@ -118,7 +125,19 @@ function drawHud(ctx, model) {
     ctx.restore();
 }
 
-function draw(ctx, canvas, starfield, dt, model) {
+function drawLevelIntro(ctx, level) {
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 72px Consolas, monospace';
+    ctx.fillStyle = '#16f2f2';
+    ctx.shadowColor = '#16f2f2';
+    ctx.shadowBlur = 24;
+    ctx.fillText(`LEVEL ${level}`, ctx.canvas.width / 2, ctx.canvas.height / 2);
+    ctx.restore();
+}
+
+function draw(ctx, canvas, starfield, dt, model, now) {
     ctx.fillStyle = '#05010f';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     drawStarfield(ctx, canvas, starfield, dt);
@@ -128,8 +147,14 @@ function draw(ctx, canvas, starfield, dt, model) {
     for (const p of model.projectiles) {
         drawProjectile(ctx, p);
     }
-    drawShip(ctx, model.shipX, model.shipY, model.shipRadius);
+    const hideShip = model.shipInvulnerable && Math.floor(now / 120) % 2 === 1;
+    if (!hideShip) {
+        drawShip(ctx, model.shipX, model.shipY, model.shipRadius);
+    }
     drawHud(ctx, model);
+    if (model.isLevelIntro) {
+        drawLevelIntro(ctx, model.level);
+    }
 }
 
 export function start(canvas, arena, starfield, dotNetRef) {
@@ -176,6 +201,12 @@ export function start(canvas, arena, starfield, dotNetRef) {
     window.addEventListener('keyup', onKeyUp);
 
     let running = true;
+    const stop = () => {
+        running = false;
+        window.removeEventListener('keydown', onKeyDown);
+        window.removeEventListener('keyup', onKeyUp);
+    };
+
     let last = performance.now();
     const frame = (now) => {
         if (!running) {
@@ -184,16 +215,15 @@ export function start(canvas, arena, starfield, dotNetRef) {
         const dt = Math.min(0.05, (now - last) / 1000);
         last = now;
         const model = dotNetRef.invokeMethod('Tick', dt, move.x, move.y);
-        draw(ctx, canvas, layers, dt, model);
+        draw(ctx, canvas, layers, dt, model, now);
+        if (model.isGameOver) {
+            stop();
+            dotNetRef.invokeMethodAsync('EndGame');
+            return;
+        }
         requestAnimationFrame(frame);
     };
     requestAnimationFrame(frame);
 
-    return {
-        stop() {
-            running = false;
-            window.removeEventListener('keydown', onKeyDown);
-            window.removeEventListener('keyup', onKeyUp);
-        },
-    };
+    return { stop };
 }

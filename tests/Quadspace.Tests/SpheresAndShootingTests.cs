@@ -20,7 +20,7 @@ public sealed class SpheresAndShootingTests
             new ProjectileConfig(projectileSpeed, projectileRadius, maxOnScreen, CooldownSeconds: 0.1),
             new ScoringConfig(PointsPerSphere: 8, SpheresPerLevelMultiplier: 8),
             new LivesConfig(ExtraLifeEveryLevels: 8, LifeSphereSpawnChance: 0.02, MaxLives: 9),
-            new LevelsConfig(IntroSeconds: 2),
+            new LevelsConfig(IntroSeconds: 0),
             new StarfieldConfig(Layers: 3, StarsPerLayer: 10));
 
     [Fact]

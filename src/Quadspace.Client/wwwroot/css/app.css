@@ -153,6 +153,44 @@ html, body {
     font-size: 0.85rem;
 }
 
+.gameover {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.2rem;
+    background: rgba(5, 1, 15, 0.82);
+    text-align: center;
+}
+
+.name-input {
+    display: block;
+    margin: 0 auto 1rem auto;
+    padding: 0.6rem 1rem;
+    width: min(80vw, 22rem);
+    background: rgba(10, 2, 30, 0.8);
+    border: 2px solid var(--neon-cyan);
+    border-radius: 6px;
+    color: #eaf6ff;
+    font-family: inherit;
+    font-size: 1.1rem;
+    letter-spacing: 0.15em;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+    .name-input:focus {
+        outline: none;
+        box-shadow: 0 0 12px var(--neon-cyan);
+    }
+
+.submit-error {
+    color: #ff6b6b;
+    text-shadow: 0 0 8px rgba(255, 107, 107, 0.6);
+}
+
 @keyframes blink {
     50% { opacity: 0; }
 }

@@ -9,6 +9,9 @@ public sealed class Sphere
     public double VelocityY { get; internal set; }
     public double Radius { get; internal set; }
 
+    /// <summary>A rare, specially-marked sphere that grants +1 life when destroyed by a shot.</summary>
+    public bool IsLifeSphere { get; internal set; }
+
     /// <summary>True once hit; the sphere is shrinking out and no longer collides.</summary>
     public bool IsDying { get; internal set; }
 

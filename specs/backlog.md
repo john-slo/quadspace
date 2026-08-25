@@ -44,7 +44,7 @@ lives in a central `game-config.json`.
 | 3 | home-highscores | P0 | 2 | Retro 80s arcade home/attract screen listing the top 10 high scores with an "insert coin"/start prompt. | IN_PROGRESS |
 | 4 | game-shell-render | P0 | 1 | Canvas render loop with parallax starfield depth-field background, the ship rendered and moving via WASD, and a HUD showing score/level/lives. | IN_PROGRESS |
 | 5 | spheres-shooting-scoring | P0 | 4 | Metallic spheres spawn from random edges with constant velocity and 90° wall bounce; tap-fire 4-way shots; a hit shrinks/destroys the sphere and adds 8 points. | IN_PROGRESS |
-| 6 | levels-lives-gameover | P0 | 5, 2 | Level progression (8×level spheres, spawn rate = level/sec) with level intro; lives with brief invulnerability, +1 life every 8 levels, and rare life-spheres; game over triggers name entry (≤50 chars) and saves via the score API. | READY |
+| 6 | levels-lives-gameover | P0 | 5, 2 | Level progression (8×level spheres, spawn rate = level/sec) with level intro; lives with brief invulnerability, +1 life every 8 levels, and rare life-spheres; game over triggers name entry (≤50 chars) and saves via the score API. | IN_PROGRESS |
 | 7 | audio-toggle | P1 | 4 | Procedurally generated Web Audio background beat with an on/off toggle persisted across the session. | READY |
 | 8 | gamepad-support | P1 | 5 | Gamepad support: left stick moves the ship, ABXY buttons fire in the four directions. | READY |
 
@@ -58,6 +58,7 @@ lives in a central `game-config.json`.
 | 2026-08-25T10:30:00Z | feature verified | 3-home-highscores | retro top-10 leaderboard home; on PR #2 |
 | 2026-08-25T10:40:00Z | feature verified | 4-game-shell-render | canvas loop, starfield, ship+WASD, HUD; on PR #2 |
 | 2026-08-25T10:52:00Z | feature verified | 5-spheres-shooting-scoring | spheres/bounce/shoot/score, 34 tests; on PR #2 |
+| 2026-08-25T11:05:00Z | feature verified | 6-levels-lives-gameover | levels/lives/game-over+name entry, 42 tests; on PR #2 |
 
 ## Decisions
 <!-- Required to add, remove, or re-scope a backlog row after the human checkpoint. Otherwise "None". -->

@@ -1,7 +1,9 @@
+using System.Net.Http.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using Quadspace.Core.Configuration;
 using Quadspace.Core.Engine;
+using Quadspace.Core.Scoring;
 
 namespace Quadspace.Client.Pages;
 
@@ -13,6 +15,12 @@ public partial class Game : IAsyncDisposable
     [Inject]
     private IJSRuntime JS { get; set; } = default!;
 
+    [Inject]
+    private HttpClient Http { get; set; } = default!;
+
+    [Inject]
+    private NavigationManager Nav { get; set; } = default!;
+
     private GameEngine _engine = default!;
     private ElementReference _canvas;
     private DotNetObjectReference<Game>? _selfRef;
@@ -20,6 +28,12 @@ public partial class Game : IAsyncDisposable
     private IJSObjectReference? _loop;
     private int _width;
     private int _height;
+
+    private bool _gameOver;
+    private int _finalScore;
+    private string _playerName = string.Empty;
+    private bool _submitting;
+    private string? _submitError;
 
     protected override void OnInitialized()
     {
@@ -57,12 +71,44 @@ public partial class Game : IAsyncDisposable
     [JSInvokable]
     public void Fire(double directionX, double directionY) => _engine.Fire(directionX, directionY);
 
+    /// <summary>Invoked by JS when the run ends; shows the name-entry overlay.</summary>
+    [JSInvokable]
+    public void EndGame()
+    {
+        _gameOver = true;
+        _finalScore = _engine.Score;
+        StateHasChanged();
+    }
+
+    private async Task SubmitScoreAsync()
+    {
+        var name = _playerName.Trim();
+        if (name.Length == 0)
+        {
+            _submitError = "Enter a name.";
+            return;
+        }
+
+        _submitting = true;
+        _submitError = null;
+        try
+        {
+            await Http.PostAsJsonAsync("api/scores", new ScoreSubmissionRequest(name, _finalScore));
+            Nav.NavigateTo("/");
+        }
+        catch (HttpRequestException)
+        {
+            _submitError = "Could not save score. Try again.";
+            _submitting = false;
+        }
+    }
+
     private RenderModel BuildRenderModel()
     {
         var spheres = new List<SphereModel>(_engine.Spheres.Count);
         foreach (var s in _engine.Spheres)
         {
-            spheres.Add(new SphereModel(s.X, s.Y, s.Radius * s.ShrinkFraction));
+            spheres.Add(new SphereModel(s.X, s.Y, s.Radius * s.ShrinkFraction, s.IsLifeSphere));
         }
 
         var projectiles = new List<ProjectileModel>(_engine.Projectiles.Count);
@@ -79,7 +125,10 @@ public partial class Game : IAsyncDisposable
             projectiles,
             _engine.Score,
             _engine.Level,
-            _engine.Lives);
+            _engine.Lives,
+            _engine.IsLevelIntro,
+            _engine.IsShipInvulnerable,
+            _engine.IsGameOver);
     }
 
     public async ValueTask DisposeAsync()
@@ -114,10 +163,13 @@ public partial class Game : IAsyncDisposable
         IReadOnlyList<ProjectileModel> Projectiles,
         int Score,
         int Level,
-        int Lives);
+        int Lives,
+        bool IsLevelIntro,
+        bool ShipInvulnerable,
+        bool IsGameOver);
 
     /// <summary>A sphere to draw (radius already reflects any shrink animation).</summary>
-    public sealed record SphereModel(double X, double Y, double Radius);
+    public sealed record SphereModel(double X, double Y, double Radius, bool IsLife);
 
     /// <summary>A projectile to draw.</summary>
     public sealed record ProjectileModel(double X, double Y, double Radius);

@@ -4,8 +4,9 @@ namespace Quadspace.Core.Engine;
 
 /// <summary>
 /// Deterministic, side-effect-free game simulation. Owns the authoritative game state (ship, spheres,
-/// projectiles, score) and advances it one frame at a time via <see cref="Update"/>. Rendering, input,
-/// and timing live outside (JS interop). A seeded <see cref="Random"/> can be injected for testability.
+/// projectiles, score, level, lives) and advances it one frame at a time via <see cref="Update"/>.
+/// Rendering, input, and timing live outside (JS interop). A seeded <see cref="Random"/> can be
+/// injected for testability.
 /// </summary>
 public sealed class GameEngine
 {
@@ -23,6 +24,7 @@ public sealed class GameEngine
         ShipX = config.Arena.Width / 2;
         ShipY = config.Arena.Height / 2;
         Lives = config.Ship.StartLives;
+        LevelIntroRemaining = config.Levels.IntroSeconds;
     }
 
     /// <summary>Ship centre X in arena units.</summary>
@@ -40,6 +42,27 @@ public sealed class GameEngine
     /// <summary>Remaining lives.</summary>
     public int Lives { get; private set; }
 
+    /// <summary>Spheres shot down toward the current level's target.</summary>
+    public int SpheresDestroyedThisLevel { get; private set; }
+
+    /// <summary>Spheres that must be destroyed to clear the current level (level * multiplier).</summary>
+    public int SpheresRequiredThisLevel => Level * _config.Scoring.SpheresPerLevelMultiplier;
+
+    /// <summary>Seconds left on the current level-intro banner (0 = playing).</summary>
+    public double LevelIntroRemaining { get; private set; }
+
+    /// <summary>True while the level-intro banner is showing (gameplay spawning is paused).</summary>
+    public bool IsLevelIntro => LevelIntroRemaining > 0;
+
+    /// <summary>Seconds left of post-hit invulnerability (0 = vulnerable).</summary>
+    public double InvulnerabilityRemaining { get; private set; }
+
+    /// <summary>True while the ship is briefly invulnerable after a hit.</summary>
+    public bool IsShipInvulnerable => InvulnerabilityRemaining > 0;
+
+    /// <summary>True once lives reach zero; the simulation stops advancing.</summary>
+    public bool IsGameOver { get; private set; }
+
     /// <summary>Live spheres in the arena (including those currently shrinking out).</summary>
     public IReadOnlyList<Sphere> Spheres => _spheres;
 
@@ -47,27 +70,54 @@ public sealed class GameEngine
     public IReadOnlyList<Projectile> Projectiles => _projectiles;
 
     /// <summary>
-    /// Advances the simulation by <paramref name="dtSeconds"/>: moves the ship, spawns and moves
-    /// spheres (with 90° wall bounces and shrink timers), moves and culls projectiles, then resolves
-    /// projectile/sphere collisions (destroy + score).
+    /// Advances the simulation by <paramref name="dtSeconds"/>: moves the ship; (unless a level intro
+    /// is showing) spawns spheres; moves projectiles/spheres with bounces and shrink timers; resolves
+    /// projectile hits (destroy + score + life-spheres) and ship collisions (life loss + invulnerability
+    /// + game over); and advances the level when its target is met.
     /// </summary>
     public void Update(double dtSeconds, double moveX, double moveY)
     {
-        if (dtSeconds <= 0)
+        if (dtSeconds <= 0 || IsGameOver)
         {
             return;
         }
 
         MoveShip(dtSeconds, moveX, moveY);
-        SpawnSpheres(dtSeconds);
+
+        if (InvulnerabilityRemaining > 0)
+        {
+            InvulnerabilityRemaining = Math.Max(0, InvulnerabilityRemaining - dtSeconds);
+        }
+
+        if (LevelIntroRemaining > 0)
+        {
+            LevelIntroRemaining = Math.Max(0, LevelIntroRemaining - dtSeconds);
+        }
+        else
+        {
+            SpawnSpheres(dtSeconds);
+        }
+
         MoveProjectiles(dtSeconds);
         MoveSpheres(dtSeconds);
-        ResolveCollisions();
+        ResolveProjectileHits();
+
+        if (!IsShipInvulnerable)
+        {
+            ResolveShipCollisions();
+        }
+
+        CheckLevelUp();
     }
 
     /// <summary>Fires one shot from the ship in the given axis direction, respecting the on-screen cap.</summary>
     public void Fire(double directionX, double directionY)
     {
+        if (IsGameOver)
+        {
+            return;
+        }
+
         var length = Math.Sqrt((directionX * directionX) + (directionY * directionY));
         if (length <= 0 || _projectiles.Count >= _config.Projectile.MaxOnScreen)
         {
@@ -142,7 +192,15 @@ public sealed class GameEngine
         if (edge == 2 && vy < 0) { vy = -vy; }
         if (edge == 3 && vy > 0) { vy = -vy; }
 
-        return new Sphere { X = x, Y = y, VelocityX = vx, VelocityY = vy, Radius = radius };
+        return new Sphere
+        {
+            X = x,
+            Y = y,
+            VelocityX = vx,
+            VelocityY = vy,
+            Radius = radius,
+            IsLifeSphere = _rng.NextDouble() < _config.Lives.LifeSphereSpawnChance,
+        };
     }
 
     private void MoveProjectiles(double dtSeconds)
@@ -207,7 +265,7 @@ public sealed class GameEngine
         }
     }
 
-    private void ResolveCollisions()
+    private void ResolveProjectileHits()
     {
         for (var pi = _projectiles.Count - 1; pi >= 0; pi--)
         {
@@ -226,12 +284,74 @@ public sealed class GameEngine
                 if ((dx * dx) + (dy * dy) <= reach * reach)
                 {
                     _projectiles.RemoveAt(pi);
-                    s.IsDying = true;
-                    s.DyingRemaining = _config.Sphere.ShrinkSeconds;
+                    StartDying(s);
                     Score += _config.Scoring.PointsPerSphere;
+                    SpheresDestroyedThisLevel++;
+                    if (s.IsLifeSphere)
+                    {
+                        GrantLife();
+                    }
+
                     break;
                 }
             }
         }
     }
+
+    private void ResolveShipCollisions()
+    {
+        var shipRadius = _config.Ship.Radius;
+        foreach (var s in _spheres)
+        {
+            if (s.IsDying)
+            {
+                continue;
+            }
+
+            var dx = ShipX - s.X;
+            var dy = ShipY - s.Y;
+            var reach = shipRadius + s.Radius;
+            if ((dx * dx) + (dy * dy) <= reach * reach)
+            {
+                Lives--;
+                InvulnerabilityRemaining = _config.Ship.InvulnerabilitySeconds;
+                StartDying(s);
+                if (Lives <= 0)
+                {
+                    Lives = 0;
+                    IsGameOver = true;
+                }
+
+                return;
+            }
+        }
+    }
+
+    private void CheckLevelUp()
+    {
+        if (SpheresDestroyedThisLevel < SpheresRequiredThisLevel)
+        {
+            return;
+        }
+
+        SpheresDestroyedThisLevel -= SpheresRequiredThisLevel;
+        Level++;
+        _spheres.Clear();
+        _projectiles.Clear();
+        _spawnAccumulator = 0;
+        LevelIntroRemaining = _config.Levels.IntroSeconds;
+
+        if (Level % _config.Lives.ExtraLifeEveryLevels == 0)
+        {
+            GrantLife();
+        }
+    }
+
+    private void StartDying(Sphere sphere)
+    {
+        sphere.IsDying = true;
+        sphere.DyingRemaining = _config.Sphere.ShrinkSeconds;
+    }
+
+    private void GrantLife() => Lives = Math.Min(Lives + 1, _config.Lives.MaxLives);
 }
