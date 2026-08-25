@@ -77,7 +77,8 @@ public sealed class GameEngine
     /// </summary>
     public void Update(double dtSeconds, double moveX, double moveY)
     {
-        if (dtSeconds <= 0 || IsGameOver)
+        // Guard against invalid or zero delta time
+        if (!double.IsFinite(dtSeconds) || dtSeconds <= 0 || IsGameOver)
         {
             return;
         }
@@ -255,7 +256,18 @@ public sealed class GameEngine
             if (s.IsDying)
             {
                 s.DyingRemaining -= dtSeconds;
-                s.ShrinkFraction = Math.Max(0, s.DyingRemaining / _config.Sphere.ShrinkSeconds);
+                var shrinkSeconds = _config.Sphere.ShrinkSeconds;
+                // Guard against divide-by-zero: ShrinkSeconds should always be > 0 in config.
+                // Bug history: If ShrinkSeconds was 0, "DyingRemaining / shrinkSeconds" threw Arg_DivideByZero.
+                if (shrinkSeconds > 0)
+                {
+                    s.ShrinkFraction = Math.Max(0, s.DyingRemaining / shrinkSeconds);
+                }
+                else
+                {
+                    s.ShrinkFraction = 0;
+                }
+
                 if (s.DyingRemaining <= 0)
                 {
                     _spheres.RemoveAt(i);
@@ -367,7 +379,9 @@ public sealed class GameEngine
         _spawnAccumulator = 0;
         LevelIntroRemaining = _config.Levels.IntroSeconds;
 
-        if (Level % _config.Lives.ExtraLifeEveryLevels == 0)
+        // Guard against divide-by-zero: ExtraLifeEveryLevels must be > 0 to use modulo operator.
+        // Bug history: When ExtraLifeEveryLevels was 0 in config, "Level % 0" threw Arg_DivideByZero.
+        if (_config.Lives.ExtraLifeEveryLevels > 0 && (Level % _config.Lives.ExtraLifeEveryLevels == 0))
         {
             GrantLife();
         }

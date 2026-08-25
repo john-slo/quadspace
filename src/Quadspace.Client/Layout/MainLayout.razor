@@ -1,5 +1,46 @@
 @inherits LayoutComponentBase
+@inject IJSRuntime JS
 
-<main class="arcade-shell">
-    @Body
-</main>
+<div class="app-container">
+    <header class="app-header">
+        <h1 class="neon-title">QUADSPACE</h1>
+    </header>
+
+    <main class="arcade-shell">
+        @Body
+    </main>
+
+    <footer class="app-footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <p class="footer-text">QUADSPACE GAME™ is a trademark of Strove Labs. All rights reserved.</p>
+                <p class="footer-text footer-legal">
+                    This game and its contents are proprietary and confidential. 
+                    Unauthorized copying, reproduction, or distribution is strictly prohibited.
+                </p>
+            </div>
+            <div class="footer-section">
+                <p class="footer-text">
+                    <span>For inquiries and support:</span><br />
+                    <span id="contact-link-placeholder" class="footer-link">loading...</span>
+                </p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p class="footer-text footer-small">© 2025 Strove Labs. All rights reserved.</p>
+        </div>
+    </footer>
+</div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Import with a query parameter to bypass static-web-asset fingerprinting,
+            // consistent with how game.js is loaded. The security module auto-initializes
+            // the contact link when imported.
+            await JS.InvokeVoidAsync("import", "./js/security.js?v=1");
+        }
+    }
+}

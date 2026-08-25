@@ -95,10 +95,13 @@ public partial class Game : IAsyncDisposable
 
     private async Task SubmitScoreAsync()
     {
-        var name = _playerName.Trim();
-        if (name.Length == 0)
+        // Sanitize the player name to prevent injection attacks.
+        // This client-side validation complements the server-side ScoreSubmission.TryNormalize.
+        var sanitized = await SanitizePlayerNameAsync(_playerName);
+
+        if (sanitized.Length == 0)
         {
-            _submitError = "Enter a name.";
+            _submitError = "Enter a valid name (letters, numbers, spaces, hyphens, apostrophes, or periods).";
             return;
         }
 
@@ -106,13 +109,35 @@ public partial class Game : IAsyncDisposable
         _submitError = null;
         try
         {
-            await Http.PostAsJsonAsync("api/scores", new ScoreSubmissionRequest(name, _finalScore));
+            await Http.PostAsJsonAsync("api/scores", new ScoreSubmissionRequest(sanitized, _finalScore));
             Nav.NavigateTo("/");
         }
         catch (HttpRequestException)
         {
             _submitError = "Could not save score. Try again.";
             _submitting = false;
+        }
+    }
+
+    /// <summary>
+    /// Sanitizes player input to prevent XSS and injection attacks.
+    /// Calls the JS security.js module to apply consistent sanitization rules.
+    /// </summary>
+    private async ValueTask<string> SanitizePlayerNameAsync(string input)
+    {
+        try
+        {
+            // Dynamically import security module and call the sanitization function
+            var securityModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/security.js");
+            var sanitized = await securityModule.InvokeAsync<string>("sanitizePlayerName", input);
+            return sanitized ?? string.Empty;
+        }
+        catch (Exception ex)
+        {
+            // If sanitization fails (JS error, etc.), fall back to basic trimming.
+            // This is a safety net; the server-side validation will still reject invalid names.
+            System.Diagnostics.Debug.WriteLine($"Player name sanitization error: {ex.Message}");
+            return input.Trim();
         }
     }
 
@@ -127,9 +152,27 @@ public partial class Game : IAsyncDisposable
         var projectiles = new List<ProjectileModel>(_engine.Projectiles.Count);
         foreach (var p in _engine.Projectiles)
         {
-            var length = Math.Sqrt((p.VelocityX * p.VelocityX) + (p.VelocityY * p.VelocityY));
-            var dirX = length > 0 ? p.VelocityX / length : 0;
-            var dirY = length > 0 ? p.VelocityY / length : 0;
+            var dx = p.VelocityX;
+            var dy = p.VelocityY;
+            var lengthSquared = (dx * dx) + (dy * dy);
+
+            double dirX, dirY;
+            // Guard against divide-by-zero when normalizing projectile velocity.
+            // Use small epsilon to handle floating-point precision issues.
+            // Bug history: Direct length check (length > 0) could fail due to floating-point rounding.
+            if (lengthSquared > 0.0001)
+            {
+                var length = Math.Sqrt(lengthSquared);
+                dirX = dx / length;
+                dirY = dy / length;
+            }
+            else
+            {
+                // Projectile has near-zero velocity - shouldn't happen, but handle gracefully
+                dirX = 0;
+                dirY = 0;
+            }
+
             projectiles.Add(new ProjectileModel(p.X, p.Y, p.Radius, dirX, dirY));
         }
 

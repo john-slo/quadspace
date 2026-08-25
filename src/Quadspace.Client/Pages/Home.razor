@@ -7,7 +7,6 @@
 <PageTitle>quadspace</PageTitle>
 
 <div class="landing">
-    <h1 class="neon-title">QUADSPACE</h1>
     <p class="neon-subtitle">NEON ARCADE // SPACE SHOOTER</p>
 
     <section class="scoreboard">
@@ -36,15 +35,15 @@
     </section>
 
     <a class="start-link" id="press-start" href="game">PRESS START</a>
-    <button class="sound-toggle" @onclick="ToggleSound" title="@(_soundEnabled ? "Disable Sound" : "Enable Sound")">
-        <span class="sound-icon">@(_soundEnabled ? "🔊" : "🔇")</span>
+    <button class="sound-toggle @(_soundEnabled ? "sound-on" : "sound-off")" @onclick="ToggleSound" title="@(_soundEnabled ? "Sound: ON" : "Sound: OFF")">
+        <span class="sound-glyph">@(_soundEnabled ? "♪" : "☆")</span>
     </button>
 </div>
 
 @code {
     private IReadOnlyList<ScoreEntry> _scores = [];
     private bool _loading = true;
-    private bool _soundEnabled = true;
+    private bool _soundEnabled = false;
     private IJSObjectReference? _module;
     private IJSObjectReference? _attract;
 
@@ -75,19 +74,30 @@
         _attract = await _module.InvokeAsync<IJSObjectReference>(
             "startAttract",
             new { beatsPerMinute = Config.Audio.BeatsPerMinute, secondLayer = Config.Audio.SecondLayer });
+
+        // Start with sound OFF - user must click button to enable
+        if (_attract is not null && !_soundEnabled)
+        {
+            await _attract.InvokeVoidAsync("pause");
+        }
     }
 
     private async Task ToggleSound()
     {
         _soundEnabled = !_soundEnabled;
 
-        if (_soundEnabled && _attract is not null)
+        if (_attract is not null)
         {
-            await _attract.InvokeVoidAsync("play");
-        }
-        else if (!_soundEnabled && _attract is not null)
-        {
-            await _attract.InvokeVoidAsync("pause");
+            if (_soundEnabled)
+            {
+                // Enable sound and pulse
+                await _attract.InvokeVoidAsync("play");
+            }
+            else
+            {
+                // Disable sound and pulse
+                await _attract.InvokeVoidAsync("pause");
+            }
         }
     }
 

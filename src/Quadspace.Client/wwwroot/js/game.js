@@ -124,6 +124,12 @@ function createBeat(options) {
             }
             reflectState();
         },
+        setMuted(shouldBeMuted) {
+            if (muted === shouldBeMuted) {
+                return; // Already in desired state
+            }
+            this.toggleMuted(); // Use existing toggle logic if state differs
+        },
         reflectState,
         stop() {
             if (timer) {
@@ -415,11 +421,20 @@ function draw(ctx, canvas, starfield, dt, model, now, pulse) {
 // Loop
 // ---------------------------------------------------------------------------
 export function start(canvas, arena, starfield, options, dotNetRef) {
+    if (!arena || arena.width <= 0 || arena.height <= 0) {
+        throw new Error('Invalid arena dimensions: width and height must be greater than 0');
+    }
     canvas.width = arena.width;
     canvas.height = arena.height;
+    console.debug(`[Game] Canvas initialized: ${arena.width}x${arena.height}`);
+
     const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        throw new Error('Failed to get 2D context from canvas');
+    }
     const layers = buildStarfield(arena, starfield);
     const beatPulse = options.beatPulse || 0;
+    console.debug(`[Game] Game start: beatPulse=${beatPulse}, layers=${layers.length}`);
 
     let running = true;
     let lastBeatAt = performance.now();
@@ -497,32 +512,114 @@ export function start(canvas, arena, starfield, options, dotNetRef) {
         sfx.stop();
     };
 
-    let last = performance.now();
+    let last = null; // Initialize on first frame to avoid negative elapsed time at startup
     let prevScore = 0;
     let prevLives = null;
+    let frameCount = 0;
+    let lastErrorTime = 0;
+    const MIN_DT = 0.001; // Minimum delta time to prevent division by zero in C#
+
     const frame = (now) => {
         if (!running) {
             return;
         }
-        const dt = Math.min(0.05, (now - last) / 1000);
-        last = now;
-        const model = dotNetRef.invokeMethod('Tick', dt, move.x, move.y);
-        if (model.score > prevScore) {
-            sfx.hit();
+
+        try {
+            frameCount++;
+
+            // Initialize last on first frame to avoid negative elapsed time at startup.
+            // Bug history: Initializing last = performance.now() before first callback could
+            // cause negative elapsed time if browser timer resolution or async timing shifts.
+            if (last === null) {
+                last = now;
+                requestAnimationFrame(frame);
+                return;
+            }
+
+            // Validate input timestamp
+            if (typeof now !== 'number' || !isFinite(now)) {
+                console.error(`[Frame ${frameCount}] Invalid timestamp: now=${now}`);
+                throw new Error(`Invalid animation frame timestamp: ${now}`);
+            }
+
+            const elapsed = now - last;
+
+            // Skip this frame if time went backwards (can happen with tab suspension or system clock adjustments)
+            if (elapsed < 0) {
+                last = now;
+                requestAnimationFrame(frame);
+                return;
+            }
+
+            // Calculate dt: clamp to reasonable range, ensure minimum to prevent division by zero in C#.
+            // MIN_DT (0.001s) guards against edge cases where dt is so small it could cause divide-by-zero
+            // in C# physics calculations or config-driven logic (e.g., modulo operations).
+            const rawDt = elapsed / 1000;
+            const clampedDt = Math.min(0.05, rawDt);
+            const dt = Math.max(MIN_DT, clampedDt);
+
+            // Validate dt value
+            if (!isFinite(dt) || dt < 0) {
+                throw new Error(`Invalid delta time: ${dt}`);
+            }
+
+            last = now;
+
+            // Invoke game tick
+            let model;
+            try {
+                model = dotNetRef.invokeMethod('Tick', dt, move.x, move.y);
+            } catch (e) {
+                console.error(`Tick invocation failed:`, e);
+                throw new Error(`Tick failed: ${e.message}`);
+            }
+
+            // Validate model object
+            if (!model || typeof model !== 'object') {
+                throw new Error(`Invalid model returned from Tick`);
+            }
+
+            if (model.score > prevScore) {
+                sfx.hit();
+            }
+            prevScore = model.score;
+
+            if (prevLives !== null && model.lives < prevLives) {
+                sfx.shipHit();
+            }
+            prevLives = model.lives;
+
+            // Calculate pulse
+            const timeSinceBeat = now - lastBeatAt;
+            const pulse = 1 + beatPulse * Math.exp(-6 * timeSinceBeat / 1000);
+
+            if (!isFinite(pulse)) {
+                throw new Error(`Invalid pulse calculated`);
+            }
+
+            // Draw with error context
+            try {
+                draw(ctx, canvas, layers, dt, model, now, pulse);
+            } catch (e) {
+                console.error(`[Frame ${frameCount}] Draw failed:`, e);
+                throw new Error(`Draw failed: ${e.message}`);
+            }
+
+            if (model.isGameOver) {
+                stop();
+                dotNetRef.invokeMethodAsync('EndGame');
+                return;
+            }
+
+            requestAnimationFrame(frame);
+        } catch (error) {
+            // Log error and continue animation loop (graceful degradation)
+            if (performance.now() - lastErrorTime > 1000) {
+                console.error(`Game loop error:`, error);
+                lastErrorTime = performance.now();
+            }
+            requestAnimationFrame(frame);
         }
-        prevScore = model.score;
-        if (prevLives !== null && model.lives < prevLives) {
-            sfx.shipHit();
-        }
-        prevLives = model.lives;
-        const pulse = 1 + beatPulse * Math.exp(-6 * (now - lastBeatAt) / 1000);
-        draw(ctx, canvas, layers, dt, model, now, pulse);
-        if (model.isGameOver) {
-            stop();
-            dotNetRef.invokeMethodAsync('EndGame');
-            return;
-        }
-        requestAnimationFrame(frame);
     };
     requestAnimationFrame(frame);
 
@@ -561,6 +658,15 @@ export function startAttract(options) {
     window.addEventListener('keydown', startOnce, { once: true });
 
     return {
+        play() {
+            // Ensure audio is unmuted and playing
+            beat.setMuted(false);
+            beat.start();
+        },
+        pause() {
+            // Ensure audio is muted (paused)
+            beat.setMuted(true);
+        },
         stop() {
             window.removeEventListener('pointerdown', startOnce);
             window.removeEventListener('keydown', startOnce);
