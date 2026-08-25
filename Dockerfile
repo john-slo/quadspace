@@ -11,13 +11,13 @@ WORKDIR /src
 
 # Copy solution and project files
 COPY ["quadspace.sln", "."]
-COPY ["src/Quadspace.Core/Quadspace.Core.csproj", "src/Quadspace.Core/"]
-COPY ["src/Quadspace.Client/Quadspace.Client.csproj", "src/Quadspace.Client/"]
-COPY ["src/Quadspace.Host/Quadspace.Host.csproj", "src/Quadspace.Host/"]
+COPY ["src/Quadspace.Core/Quadspace.Core.csproj", "./Quadspace.Core/"]
+COPY ["src/Quadspace.Client/Quadspace.Client.csproj", "./Quadspace.Client/"]
+COPY ["src/Quadspace.Host/Quadspace.Host.csproj", "./Quadspace.Host/"]
 
 # Restore dependencies
 # This layer is cached until project files change
-RUN dotnet restore "src/Quadspace.Host/Quadspace.Host.csproj"
+RUN dotnet restore "Quadspace.Host/Quadspace.Host.csproj"
 
 # Copy all source code
 COPY . .
@@ -25,14 +25,14 @@ COPY . .
 # Build the application
 # PublishTrimmed reduces size by removing unused IL
 # PublishReadyToRun improves startup time
-RUN dotnet build "src/Quadspace.Host/Quadspace.Host.csproj" \
+RUN dotnet build "Quadspace.Host/Quadspace.Host.csproj" \
     --configuration Release \
     --no-restore \
     -p:DebugType=none \
     -p:DebugSymbols=false
 
 # Publish the application
-RUN dotnet publish "src/Quadspace.Host/Quadspace.Host.csproj" \
+RUN dotnet publish "Quadspace.Host/Quadspace.Host.csproj" \
     --configuration Release \
     --no-build \
     --output /app/publish \
