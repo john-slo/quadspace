@@ -1,0 +1,78 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Source control
+.github
+.gitlab-ci.yml
+.travis.yml
+
+# IDE
+.vscode
+.vs
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+*.user
+*.userprefs
+*.suo
+*.sln.iml
+
+# Build output
+bin
+obj
+out
+dist
+build
+*.nupkg
+*.snupkg
+
+# Node modules (if using npm)
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Test results
+TestResults
+coverage
+.coverage
+
+# Docker
+.docker
+.dockerignore
+Dockerfile
+docker-compose*.yml
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.circleci
+
+# Documentation
+docs
+README.md
+CONTRIBUTING.md
+LICENSE
+*.md
+
+# Development files
+.env
+.env.local
+launchSettings.json
+appsettings.Development.json
+
+# Package managers
+packages
+.nuget
+
+# Logs
+logs
+*.log
+
+# Temporary files
+temp
+tmp
+*.tmp

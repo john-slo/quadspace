@@ -1,0 +1,83 @@
+# ============================================================================
+# Docker Compose - Development Environment
+# Local development with live code mounting and debugging support
+# ============================================================================
+
+version: "3.9"
+
+services:
+  # Quadspace Game Server
+  quadspace:
+    container_name: quadspace-dev
+
+    # Build from Dockerfile in current directory
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+
+    # Service name for DNS resolution
+    hostname: quadspace
+
+    # Port mappings: host:container
+    ports:
+      - "8080:8080"      # HTTP
+      - "5000:5000"      # Alternative HTTP (development)
+
+    # Mount source code for hot reload development
+    volumes:
+      # Source code for development
+      - ./src:/src
+      # Preserve build artifacts between runs
+      - quadspace-build:/src/obj
+      - quadspace-build:/src/bin
+      # Score data persistence
+      - quadspace-scores:/app/scores
+      # NuGet cache for faster builds
+      - nuget-cache:/home/appuser/.nuget
+
+    # Environment variables for development
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      DOTNET_URLS: http://+:8080
+      DOTNET_RUNNING_IN_CONTAINER: "true"
+      # Scores directory inside container
+      Scores__Directory: /app/scores
+      # Enable detailed logging
+      Logging__LogLevel__Default: Information
+      Logging__LogLevel__Microsoft: Warning
+
+    # Container restart policy
+    restart: unless-stopped
+
+    # Override entrypoint for development (optional)
+    # Uncomment to run in watch mode:
+    # entrypoint: dotnet watch --project src/Quadspace.Host/Quadspace.Host.csproj run
+
+    # Keep container running
+    stdin_open: true
+    tty: true
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/scores/top"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+# Named volumes for persistence and performance
+volumes:
+  quadspace-scores:
+    driver: local
+  quadspace-build:
+    driver: local
+  nuget-cache:
+    driver: local
+
+# Network for service communication
+networks:
+  default:
+    name: quadspace-network
+    driver: bridge

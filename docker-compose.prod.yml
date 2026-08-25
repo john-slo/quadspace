@@ -1,0 +1,94 @@
+# ============================================================================
+# Docker Compose - Production Configuration
+# Secure, optimized setup for production deployments
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# ============================================================================
+
+version: "3.9"
+
+services:
+  quadspace:
+    # Image name and version
+    image: quadspace:1.0.0
+
+    # Container name for production
+    container_name: quadspace-prod
+
+    # Production restart policy - restart on failure
+    restart: on-failure:5
+
+    # Port mappings - only HTTP, no debug ports
+    ports:
+      - "8080:8080"
+
+    # Production volumes - scores persistence only
+    volumes:
+      - quadspace-scores-prod:/app/scores
+      - /etc/localtime:/etc/localtime:ro  # Use host timezone
+
+    # Production environment
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      DOTNET_URLS: http://+:8080
+      DOTNET_RUNNING_IN_CONTAINER: "true"
+      # Disable development features
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      # Scores storage
+      Scores__Directory: /app/scores
+      # Production logging
+      Logging__LogLevel__Default: Warning
+      Logging__LogLevel__Microsoft: Error
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+        reservations:
+          cpus: "0.5"
+          memory: 256M
+
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+
+    # Read-only root filesystem (enhanced security)
+    read_only: true
+
+    # Temporary filesystem for app needs
+    tmpfs:
+      - /tmp
+      - /var/tmp
+
+    # Health check with stricter parameters
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/scores/top"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "quadspace=prod"
+
+# Production volumes
+volumes:
+  quadspace-scores-prod:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/scores  # Use host directory for backups
+
+# Production network
+networks:
+  default:
+    name: quadspace-prod-network
+    driver: bridge
