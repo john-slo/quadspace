@@ -24,6 +24,8 @@
 # Build output
 bin
 obj
+**/bin
+**/obj
 out
 dist
 build

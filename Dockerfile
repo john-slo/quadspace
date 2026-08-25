@@ -9,35 +9,38 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 
 WORKDIR /src
 
-# Copy solution and project files
-COPY ["quadspace.sln", "."]
-COPY ["src/Quadspace.Core/Quadspace.Core.csproj", "./Quadspace.Core/"]
-COPY ["src/Quadspace.Client/Quadspace.Client.csproj", "./Quadspace.Client/"]
-COPY ["src/Quadspace.Host/Quadspace.Host.csproj", "./Quadspace.Host/"]
+# Copy the solution, shared build props, and project files first so the restore
+# layer is cached until a project file changes. Destinations MUST preserve the
+# real "src/..." layout so the later "COPY . ." overlays source onto the same
+# project directories.
+COPY ["quadspace.sln", "./"]
+COPY ["Directory.Build.props", "./"]
+COPY ["src/Quadspace.Core/Quadspace.Core.csproj", "src/Quadspace.Core/"]
+COPY ["src/Quadspace.Client/Quadspace.Client.csproj", "src/Quadspace.Client/"]
+COPY ["src/Quadspace.Host/Quadspace.Host.csproj", "src/Quadspace.Host/"]
 
-# Restore dependencies
-# This layer is cached until project files change
-RUN dotnet restore "Quadspace.Host/Quadspace.Host.csproj"
+# Restore dependencies (cached until a project file changes)
+RUN dotnet restore "src/Quadspace.Host/Quadspace.Host.csproj"
 
 # Copy all source code
 COPY . .
 
-# Build the application
-# PublishTrimmed reduces size by removing unused IL
-# PublishReadyToRun improves startup time
-RUN dotnet build "Quadspace.Host/Quadspace.Host.csproj" \
+# Build the host (this also builds the referenced Blazor WebAssembly client).
+RUN dotnet build "src/Quadspace.Host/Quadspace.Host.csproj" \
     --configuration Release \
     --no-restore \
     -p:DebugType=none \
     -p:DebugSymbols=false
 
-# Publish the application
-RUN dotnet publish "Quadspace.Host/Quadspace.Host.csproj" \
+# Publish the application (bundles the client's published WASM assets into wwwroot).
+# NOTE: PublishReadyToRun must stay false — R2R/crossgen cannot be applied to the
+# Blazor WebAssembly (Client) assemblies and fails the publish with NETSDK1095.
+RUN dotnet publish "src/Quadspace.Host/Quadspace.Host.csproj" \
     --configuration Release \
     --no-build \
     --output /app/publish \
     -p:PublishTrimmed=false \
-    -p:PublishReadyToRun=true \
+    -p:PublishReadyToRun=false \
     -p:PublishSingleFile=false
 
 # ============================================================================
