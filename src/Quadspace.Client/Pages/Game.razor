@@ -1,0 +1,11 @@
+@page "/game"
+
+<div class="game-shell">
+    <canvas @ref="_canvas" class="game-canvas" width="@_width" height="@_height"></canvas>
+    <div class="hud">
+        <span class="hud-item">SCORE <b>@_engine.Score.ToString("N0")</b></span>
+        <span class="hud-item">LEVEL <b>@_engine.Level</b></span>
+        <span class="hud-item">LIVES <b>@_engine.Lives</b></span>
+    </div>
+    <a class="game-exit" href="">◄ HOME</a>
+</div>
