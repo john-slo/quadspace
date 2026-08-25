@@ -2,8 +2,8 @@
   "schemaVersion": "2.0",
   "_about": "Agentic SDD configuration. One runtime (GitHub Copilot CLI), one GitHub-based flow. Copy to process.config.json and fill in github + stack. Defaults target .NET/Blazor but every stack assumption is overridable.",
   "github": {
-    "owner": "YOUR-ORG",
-    "repo": "YOUR-REPO",
+    "owner": "john-slo",
+    "repo": "quadspace",
     "targetBranch": "main",
     "defaultReviewers": [],
     "mergeMethod": "squash",
@@ -21,7 +21,7 @@
   "stack": {
     "kind": "dotnet",
     "_kind_help": "Informational label for the primary stack (e.g. 'dotnet', 'node', 'python'). Defaults target .NET/Blazor.",
-    "solution": "",
+    "solution": "quadspace.sln",
     "_solution_help": "Path to the .sln/.slnx (or project) to build/test. Empty = let the tool discover it / build the whole repo.",
     "buildCommand": "dotnet build {solution} -c Release",
     "testCommand": "dotnet test {solution} -c Release",
@@ -62,7 +62,15 @@
     "maxNewPackages": 3,
     "maxLocDelta": 2000
   },
-  "allowedPackages": [],
+  "allowedPackages": [
+    "Microsoft.AspNetCore.Components.WebAssembly",
+    "Microsoft.AspNetCore.Components.WebAssembly.DevServer",
+    "Microsoft.AspNetCore.Components.WebAssembly.Server",
+    "Microsoft.NET.Test.Sdk",
+    "xunit",
+    "xunit.runner.visualstudio",
+    "coverlet.collector"
+  ],
   "_allowedPackages_help": "Packages that may be added without an escalation. Anything else requires a Decision entry.",
   "loops": {
     "maxImplementIterations": 2,
