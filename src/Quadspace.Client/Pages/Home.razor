@@ -1,11 +1,58 @@
 ﻿@page "/"
-@inject GameConfig Config
+@inject HttpClient Http
 
 <PageTitle>quadspace</PageTitle>
 
 <div class="landing">
     <h1 class="neon-title">QUADSPACE</h1>
     <p class="neon-subtitle">NEON ARCADE // SPACE SHOOTER</p>
-    <p class="neon-blink">INSERT COIN</p>
-    <p class="neon-hint">Ready — @Config.Ship.StartLives lives</p>
+
+    <section class="scoreboard">
+        <h2 class="scoreboard-title">HIGH SCORES</h2>
+        @if (_loading)
+        {
+            <p class="scoreboard-status">LOADING…</p>
+        }
+        else if (_scores.Count == 0)
+        {
+            <p class="scoreboard-status">NO SCORES YET — BE THE FIRST</p>
+        }
+        else
+        {
+            <ol class="scoreboard-list">
+                @for (var i = 0; i < _scores.Count; i++)
+                {
+                    <li class="scoreboard-row">
+                        <span class="rank">@((i + 1).ToString("00"))</span>
+                        <span class="name">@_scores[i].Name</span>
+                        <span class="score">@_scores[i].Score.ToString("N0")</span>
+                    </li>
+                }
+            </ol>
+        }
+    </section>
+
+    <a class="start-link neon-blink" href="game">PRESS START</a>
+    <p class="neon-hint">INSERT COIN</p>
 </div>
+
+@code {
+    private IReadOnlyList<ScoreEntry> _scores = [];
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _scores = await Http.GetFromJsonAsync<List<ScoreEntry>>("api/scores/top?count=10") ?? [];
+        }
+        catch (HttpRequestException)
+        {
+            _scores = [];
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}
