@@ -42,6 +42,8 @@ services:
       ASPNETCORE_URLS: http://+:8090
       DOTNET_URLS: http://+:8090
       DOTNET_RUNNING_IN_CONTAINER: "true"
+      # Use invariant globalization mode (Alpine doesn't have ICU by default)
+      DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: "true"
       # Scores directory inside container
       Scores__Directory: /app/scores
       # Enable detailed logging

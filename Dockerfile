@@ -87,7 +87,7 @@ EXPOSE 8090
 ENV DOTNET_URLS=http://+:8090 \
     ASPNETCORE_URLS=http://+:8090 \
     DOTNET_RUNNING_IN_CONTAINER=true \
-    DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+    DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true
 
 # Health check for container orchestration
 # Checks if the application is responding to HTTP requests
