@@ -19,7 +19,7 @@ services:
 
     # Port mappings - only HTTP, no debug ports
     ports:
-      - "8080:8080"
+      - "8090:8090"
 
     # Production volumes - scores persistence only
     volumes:
@@ -29,8 +29,8 @@ services:
     # Production environment
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ASPNETCORE_URLS: http://+:8080
-      DOTNET_URLS: http://+:8080
+      ASPNETCORE_URLS: http://+:8090
+      DOTNET_URLS: http://+:8090
       DOTNET_RUNNING_IN_CONTAINER: "true"
       # Disable development features
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
@@ -64,7 +64,7 @@ services:
 
     # Health check with stricter parameters
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/scores/top"]
+      test: ["CMD", "curl", "-f", "http://localhost:8090/api/scores/top"]
       interval: 60s
       timeout: 10s
       retries: 3

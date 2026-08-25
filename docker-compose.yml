@@ -21,7 +21,7 @@ services:
 
     # Port mappings: host:container
     ports:
-      - "8080:8080"      # HTTP
+      - "8090:8090"      # HTTP
       - "5000:5000"      # Alternative HTTP (development)
 
     # Mount source code for hot reload development
@@ -39,8 +39,8 @@ services:
     # Environment variables for development
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_URLS: http://+:8080
-      DOTNET_URLS: http://+:8080
+      ASPNETCORE_URLS: http://+:8090
+      DOTNET_URLS: http://+:8090
       DOTNET_RUNNING_IN_CONTAINER: "true"
       # Scores directory inside container
       Scores__Directory: /app/scores
