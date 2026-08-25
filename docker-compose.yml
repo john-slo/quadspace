@@ -63,7 +63,7 @@ services:
 
     # Health check
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/scores/top"]
+      test: ["CMD", "curl", "-f", "http://localhost:8090/api/scores/top"]
       interval: 30s
       timeout: 5s
       retries: 3

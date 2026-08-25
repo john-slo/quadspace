@@ -9,12 +9,10 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 
 WORKDIR /src
 
-# Copy the solution, shared build props, and project files first so the restore
-# layer is cached until a project file changes. Destinations MUST preserve the
-# real "src/..." layout so the later "COPY . ." overlays source onto the same
-# project directories.
+# Copy the solution and project files first so the restore layer is cached
+# until a project file changes. Destinations MUST preserve the real "src/..." layout
+# so the later "COPY . ." overlays source onto the same project directories.
 COPY ["quadspace.sln", "./"]
-COPY ["Directory.Build.props", "./"]
 COPY ["src/Quadspace.Core/Quadspace.Core.csproj", "src/Quadspace.Core/"]
 COPY ["src/Quadspace.Client/Quadspace.Client.csproj", "src/Quadspace.Client/"]
 COPY ["src/Quadspace.Host/Quadspace.Host.csproj", "src/Quadspace.Host/"]
@@ -36,9 +34,10 @@ RUN dotnet build "src/Quadspace.Host/Quadspace.Host.csproj" \
 # NOTE: PublishReadyToRun must stay false — R2R/crossgen cannot be applied to the
 # Blazor WebAssembly (Client) assemblies and fails the publish with NETSDK1095.
 # DebugType=none prevents the publish step from looking for PDB files that don't exist.
+# We must NOT use --no-build here because the _framework folder generation requires
+# the full publish pipeline to run, which includes bundling the Blazor client.
 RUN dotnet publish "src/Quadspace.Host/Quadspace.Host.csproj" \
     --configuration Release \
-    --no-build \
     --output /app/publish \
     -p:PublishTrimmed=false \
     -p:PublishReadyToRun=false \
@@ -72,6 +71,10 @@ WORKDIR /app
 
 # Copy published application from build stage
 COPY --from=build /app/publish .
+
+# Verify wwwroot exists and has Blazor files
+RUN ls -la /app/ && \
+    ls -la /app/wwwroot/ 2>/dev/null || echo "WARNING: wwwroot folder missing or empty"
 
 # Create directory for score data with proper permissions
 RUN mkdir -p /app/scores && \
