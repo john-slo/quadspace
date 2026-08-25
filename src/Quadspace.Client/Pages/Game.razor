@@ -4,6 +4,12 @@
     <canvas @ref="_canvas" class="game-canvas" width="@_width" height="@_height"></canvas>
     <a class="game-exit" href="">◄ HOME</a>
 
+    <div class="controls-legend">
+        <span>MOVE <b>W A S D</b></span>
+        <span>FIRE <b>&uarr; &darr; &larr; &rarr;</b></span>
+        <span>SOUND <b>M</b> <span id="sound-state">--</span></span>
+    </div>
+
     @if (_gameOver)
     {
         <div class="gameover">

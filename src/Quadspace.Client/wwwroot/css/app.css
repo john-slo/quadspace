@@ -153,6 +153,35 @@ html, body {
     font-size: 0.85rem;
 }
 
+.controls-legend {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 1.75rem;
+    padding: 0.4rem 1rem;
+    background: rgba(10, 2, 30, 0.55);
+    border: 1px solid rgba(22, 242, 242, 0.25);
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+    .controls-legend b {
+        color: var(--neon-cyan);
+        text-shadow: 0 0 6px var(--neon-cyan);
+        font-weight: 700;
+    }
+
+    .controls-legend #sound-state {
+        color: var(--neon-magenta);
+        text-shadow: 0 0 6px var(--neon-magenta);
+    }
+
 .gameover {
     position: absolute;
     inset: 0;

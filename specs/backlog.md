@@ -45,7 +45,7 @@ lives in a central `game-config.json`.
 | 4 | game-shell-render | P0 | 1 | Canvas render loop with parallax starfield depth-field background, the ship rendered and moving via WASD, and a HUD showing score/level/lives. | IN_PROGRESS |
 | 5 | spheres-shooting-scoring | P0 | 4 | Metallic spheres spawn from random edges with constant velocity and 90° wall bounce; tap-fire 4-way shots; a hit shrinks/destroys the sphere and adds 8 points. | IN_PROGRESS |
 | 6 | levels-lives-gameover | P0 | 5, 2 | Level progression (8×level spheres, spawn rate = level/sec) with level intro; lives with brief invulnerability, +1 life every 8 levels, and rare life-spheres; game over triggers name entry (≤50 chars) and saves via the score API. | IN_PROGRESS |
-| 7 | audio-toggle | P1 | 4 | Procedurally generated Web Audio background beat with an on/off toggle persisted across the session. | READY |
+| 7 | audio-controls-visuals | P1 | 4 | Procedural Web Audio background beat with a mute toggle (M, persisted), an on-screen controls legend (move/fire/sound), and richer ship/sphere/projectile visuals. | IN_PROGRESS |
 | 8 | gamepad-support | P1 | 5 | Gamepad support: left stick moves the ship, ABXY buttons fire in the four directions. | READY |
 
 ## Run Log

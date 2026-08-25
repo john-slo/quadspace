@@ -117,7 +117,10 @@ public partial class Game : IAsyncDisposable
         var projectiles = new List<ProjectileModel>(_engine.Projectiles.Count);
         foreach (var p in _engine.Projectiles)
         {
-            projectiles.Add(new ProjectileModel(p.X, p.Y, p.Radius));
+            var length = Math.Sqrt((p.VelocityX * p.VelocityX) + (p.VelocityY * p.VelocityY));
+            var dirX = length > 0 ? p.VelocityX / length : 0;
+            var dirY = length > 0 ? p.VelocityY / length : 0;
+            projectiles.Add(new ProjectileModel(p.X, p.Y, p.Radius, dirX, dirY));
         }
 
         return new RenderModel(
@@ -174,6 +177,6 @@ public partial class Game : IAsyncDisposable
     /// <summary>A sphere to draw (radius already reflects any shrink animation).</summary>
     public sealed record SphereModel(double X, double Y, double Radius, bool IsLife);
 
-    /// <summary>A projectile to draw.</summary>
-    public sealed record ProjectileModel(double X, double Y, double Radius);
+    /// <summary>A projectile to draw (with normalized travel direction for its tail).</summary>
+    public sealed record ProjectileModel(double X, double Y, double Radius, double DirX, double DirY);
 }
