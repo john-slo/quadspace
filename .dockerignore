@@ -32,6 +32,10 @@ build
 *.nupkg
 *.snupkg
 
+# Runtime score data (must not be baked into the deployment image; created at runtime)
+scores
+**/scores
+
 # Node modules (if using npm)
 node_modules
 npm-debug.log
