@@ -11,6 +11,8 @@ builder.Services.AddSingleton(new FileScoreStore(scoresDirectory, TimeProvider.S
 
 var app = builder.Build();
 
+app.UseHttpsRedirection();
+
 // Serve the Blazor WebAssembly client via the static-assets endpoint pipeline. MapStaticAssets reads
 // the generated endpoints manifest so fingerprinted framework files (e.g. blazor.webassembly.js) are
 // resolved from their canonical routes in published/container deployments — UseStaticFiles cannot.
