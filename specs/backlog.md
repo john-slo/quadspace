@@ -61,6 +61,7 @@ lives in a central `game-config.json`.
 | 2026-08-25T10:52:00Z | feature verified | 5-spheres-shooting-scoring | spheres/bounce/shoot/score, 34 tests; on PR #2 |
 | 2026-08-25T11:05:00Z | feature verified | 6-levels-lives-gameover | levels/lives/game-over+name entry, 42 tests; on PR #2 |
 | 2026-08-27T10:20:00Z | feature started | 10-mobile-support | branch feature/10-mobile-support, issue #5 |
+| 2026-08-27T11:38:00Z | feature verified | 10-mobile-support | touch controls + adaptive arena; 49 tests; PR #6 |
 
 ## Decisions
 <!-- Required to add, remove, or re-scope a backlog row after the human checkpoint. Otherwise "None". -->

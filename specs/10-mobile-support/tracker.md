@@ -149,11 +149,11 @@ handlers to the control elements (looked up within the canvas's shell):
 ## Change Budget
 | Metric | Used | Limit | OK |
 | --- | --- | --- | --- |
-| Files changed | TBD | 40 | ✅ |
-| New files | TBD | 25 | ✅ |
+| Files changed | 9 | 40 | ✅ |
+| New files | 1 | 25 | ✅ |
 | New projects | 0 | 1 | ✅ |
 | New packages | 0 | 3 | ✅ |
-| LOC delta | TBD | 2000 | ✅ |
+| LOC delta | ~607 | 2000 | ✅ |
 
 ## Decisions / Escalations
 - 2026-08-27: Backlog row 10 (mobile-support) added after the human checkpoint, approved by the human
@@ -162,5 +162,5 @@ handlers to the control elements (looked up within the canvas's shell):
   avoid changing existing desktop gameplay.
 
 ## Pull Request
-- **Url:** (pending)
-- **State:** (pending)
+- **Url:** https://github.com/john-slo/quadspace/pull/6
+- **State:** OPEN (Copilot review requested; awaiting CI + review)
