@@ -309,6 +309,7 @@ html, body {
     inset: 0;
     display: block;
     z-index: 20;
+    background: #05010f;
     /* Suppress browser pan/zoom/overscroll gestures across the whole play area (the canvas fills it
        and receives the stray touches the overlay lets through). */
     touch-action: none;
@@ -317,11 +318,15 @@ html, body {
     -webkit-user-select: none;
 }
 
+/* The canvas fills the viewport but preserves the arena's aspect ratio: when the arena is adapted to
+   the screen the fit is exact, and when adaptation is disabled the fixed field is letterboxed on the
+   black shell background instead of being stretched/distorted. */
 .game-shell.touch .game-canvas {
     width: 100vw;
     height: 100vh;
     border: none;
     box-shadow: none;
+    object-fit: contain;
     touch-action: none;
 }
 
