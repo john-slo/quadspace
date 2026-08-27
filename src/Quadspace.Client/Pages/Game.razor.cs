@@ -28,6 +28,7 @@ public partial class Game : IAsyncDisposable
     private IJSObjectReference? _loop;
     private int _width;
     private int _height;
+    private bool _isTouch;
 
     private bool _gameOver;
     private int _finalScore;
@@ -44,28 +45,51 @@ public partial class Game : IAsyncDisposable
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender)
+        if (firstRender)
         {
+            _selfRef = DotNetObjectReference.Create(this);
+            // Import with a stable query string so the physical module is loaded directly, bypassing
+            // the static-web-asset import map (which rewrites "./js/game.js" to a fingerprinted URL).
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/game.js?v=1");
+            _isTouch = await _module.InvokeAsync<bool>("isTouchDevice");
+
+            // On touch devices the play-field adapts to the actual screen so the game fills the
+            // viewport instead of being letterboxed. The engine reads every bound from the config, so
+            // cloning the immutable config with new arena dimensions is all that is required.
+            if (_isTouch && Config.ControlsOrDefault.AdaptArenaToScreenOnTouch)
+            {
+                var viewport = await _module.InvokeAsync<Viewport>("measureViewport");
+                if (viewport.Width > 0 && viewport.Height > 0)
+                {
+                    _width = (int)Math.Round(viewport.Width);
+                    _height = (int)Math.Round(viewport.Height);
+                    _engine = new GameEngine(Config with { Arena = new ArenaConfig(_width, _height) });
+                }
+            }
+
+            // Re-render so the touch controls and the (possibly resized) canvas exist in the DOM before
+            // the JS loop is wired to them on the following render pass.
+            StateHasChanged();
             return;
         }
 
-        _selfRef = DotNetObjectReference.Create(this);
-        // Import with a stable query so the static-web-asset import map (which rewrites "./js/game.js"
-        // to a fingerprinted path the host's static-file middleware does not serve) is bypassed and the
-        // physical module is loaded directly.
-        _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/game.js?v=1");
-        _loop = await _module.InvokeAsync<IJSObjectReference>(
-            "start",
-            _canvas,
-            new { width = _width, height = _height },
-            new { layers = Config.Starfield.Layers, starsPerLayer = Config.Starfield.StarsPerLayer },
-            new
-            {
-                beatsPerMinute = Config.Audio.BeatsPerMinute,
-                secondLayer = Config.Audio.SecondLayer,
-                beatPulse = Config.Sphere.BeatPulse,
-            },
-            _selfRef);
+        if (_loop is null && _module is not null)
+        {
+            _loop = await _module.InvokeAsync<IJSObjectReference>(
+                "start",
+                _canvas,
+                new { width = _width, height = _height },
+                new { layers = Config.Starfield.Layers, starsPerLayer = Config.Starfield.StarsPerLayer },
+                new
+                {
+                    beatsPerMinute = Config.Audio.BeatsPerMinute,
+                    secondLayer = Config.Audio.SecondLayer,
+                    beatPulse = Config.Sphere.BeatPulse,
+                    touch = _isTouch,
+                    joystickDeadZone = Config.ControlsOrDefault.JoystickDeadZone,
+                },
+                _selfRef);
+        }
     }
 
     /// <summary>Called once per animation frame from JS: advances the engine and returns what to draw.</summary>
@@ -232,4 +256,7 @@ public partial class Game : IAsyncDisposable
 
     /// <summary>A projectile to draw (with normalized travel direction for its tail).</summary>
     public sealed record ProjectileModel(double X, double Y, double Radius, double DirX, double DirY);
+
+    /// <summary>Viewport size reported by JS, used to size the arena on touch devices.</summary>
+    public sealed record Viewport(double Width, double Height);
 }

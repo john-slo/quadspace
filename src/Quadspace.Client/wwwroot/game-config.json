@@ -7,5 +7,6 @@
   "lives": { "extraLifeEveryLevels": 0, "lifeSphereSpawnChance": 0.02, "maxLives": 100 },
   "levels": { "introSeconds": 2.0 },
   "starfield": { "layers": 3, "starsPerLayer": 60 },
-  "audio": { "beatsPerMinute": 128, "secondLayer": true }
+  "audio": { "beatsPerMinute": 128, "secondLayer": true },
+  "controls": { "joystickDeadZone": 0.15, "adaptArenaToScreenOnTouch": true }
 }

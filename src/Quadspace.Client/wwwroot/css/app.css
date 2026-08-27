@@ -298,6 +298,189 @@ html, body {
     text-shadow: 0 0 6px var(--neon-magenta);
 }
 
+/* ===================================================================
+   Touch / mobile controls
+   On touch devices the shell fills the viewport (the arena is sized to
+   match), the desktop footer/legend is hidden, and an overlay hosts a
+   virtual joystick, a fire cluster, and audio toggles.
+   =================================================================== */
+.game-shell.touch {
+    position: fixed;
+    inset: 0;
+    display: block;
+    z-index: 20;
+    background: #05010f;
+    /* Suppress browser pan/zoom/overscroll gestures across the whole play area (the canvas fills it
+       and receives the stray touches the overlay lets through). */
+    touch-action: none;
+    overscroll-behavior: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* The canvas fills the viewport but preserves the arena's aspect ratio: when the arena is adapted to
+   the screen the fit is exact, and when adaptation is disabled the fixed field is letterboxed on the
+   black shell background instead of being stretched/distorted. */
+.game-shell.touch .game-canvas {
+    width: 100vw;
+    height: 100vh;
+    border: none;
+    box-shadow: none;
+    object-fit: contain;
+    touch-action: none;
+}
+
+.game-shell.touch .game-controls {
+    display: none;
+}
+
+.touch-controls {
+    position: absolute;
+    inset: 0;
+    pointer-events: none; /* only the controls themselves capture input */
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    z-index: 30;
+}
+
+.touch-controls > * {
+    pointer-events: auto;
+    touch-action: none;
+}
+
+.touch-home {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.9rem;
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.9rem;
+    letter-spacing: 0.12em;
+    text-shadow: 0 0 6px rgba(22, 242, 242, 0.4);
+}
+
+.touch-toggles {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.9rem;
+    display: flex;
+    gap: 0.6rem;
+}
+
+.touch-toggle {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    border: 2px solid var(--neon-cyan);
+    background: rgba(10, 2, 30, 0.55);
+    color: var(--neon-cyan);
+    text-shadow: 0 0 8px var(--neon-cyan);
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.touch-toggle.control-off {
+    border-color: var(--text-dim);
+    color: var(--text-dim);
+    text-shadow: none;
+    opacity: 0.7;
+}
+
+.touch-toggle:active {
+    transform: scale(0.92);
+}
+
+.touch-stick {
+    position: absolute;
+    left: 5vw;
+    bottom: 8vh;
+    width: 8.5rem;
+    height: 8.5rem;
+    border-radius: 50%;
+    border: 2px solid rgba(22, 242, 242, 0.5);
+    background: radial-gradient(circle, rgba(22, 242, 242, 0.12), rgba(10, 2, 30, 0.35));
+    box-shadow: 0 0 18px rgba(22, 242, 242, 0.35), inset 0 0 18px rgba(22, 242, 242, 0.15);
+}
+
+.touch-knob {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 3.4rem;
+    height: 3.4rem;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle at 35% 30%, #eaffff, var(--neon-cyan) 60%, #0b3a3a);
+    box-shadow: 0 0 14px rgba(22, 242, 242, 0.7);
+    pointer-events: none;
+}
+
+.touch-fire-cluster {
+    position: absolute;
+    right: 5vw;
+    bottom: 8vh;
+    display: grid;
+    grid-template-columns: repeat(3, 3.4rem);
+    grid-template-rows: repeat(3, 3.4rem);
+    gap: 0.35rem;
+}
+
+.touch-fire {
+    border-radius: 12px;
+    border: 2px solid var(--neon-magenta);
+    background: rgba(30, 2, 24, 0.5);
+    color: var(--neon-magenta);
+    text-shadow: 0 0 8px var(--neon-magenta);
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.touch-fire:active {
+    background: rgba(255, 47, 208, 0.25);
+    transform: scale(0.94);
+}
+
+.touch-fire.up { grid-column: 2; grid-row: 1; }
+.touch-fire.left { grid-column: 1; grid-row: 2; }
+.touch-fire.right { grid-column: 3; grid-row: 2; }
+.touch-fire.down { grid-column: 2; grid-row: 3; }
+
+/* Portrait "rotate to landscape" hint - non-blocking (does not capture input). */
+.rotate-hint {
+    display: none;
+}
+
+@media (orientation: portrait) {
+    .game-shell.touch .rotate-hint {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        background: rgba(5, 1, 15, 0.72);
+        z-index: 40;
+    }
+
+    .game-shell.touch .rotate-hint p {
+        color: var(--neon-cyan);
+        text-shadow: 0 0 10px var(--neon-cyan), 0 0 24px var(--neon-magenta);
+        font-size: clamp(1.1rem, 5vw, 2rem);
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        animation: blink 1.4s steps(2, start) infinite;
+    }
+}
+
 /* Modern modal dialog using native HTML5 <dialog> element */
 .gameover {
     position: fixed;

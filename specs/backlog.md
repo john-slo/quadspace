@@ -47,6 +47,7 @@ lives in a central `game-config.json`.
 | 6 | levels-lives-gameover | P0 | 5, 2 | Level progression (8×level spheres, spawn rate = level/sec) with level intro; lives with brief invulnerability, +1 life every 8 levels, and rare life-spheres; game over triggers name entry (≤50 chars) and saves via the score API. | IN_PROGRESS |
 | 7 | audio-controls-visuals | P1 | 4 | Procedural Web Audio background beat with a mute toggle (M, persisted), an on-screen controls legend (move/fire/sound), and richer ship/sphere/projectile visuals. | IN_PROGRESS |
 | 8 | gamepad-support | P1 | 5 | Gamepad support: left stick moves the ship, ABXY buttons fire in the four directions. | READY |
+| 10 | mobile-support | P1 | 5 | Touch-device support: on touch devices the play-field adapts to the screen, a left virtual joystick moves the ship, four right-side buttons fire, on-screen music/SFX toggle icons replace the keyboard legend, and a portrait "rotate to landscape" hint appears. Desktop (non-touch) is unchanged. | READY |
 
 ## Run Log
 <!-- Append-only. The orchestrator writes one row each time EXECUTE starts/stops or a row transitions. -->
@@ -59,9 +60,14 @@ lives in a central `game-config.json`.
 | 2026-08-25T10:40:00Z | feature verified | 4-game-shell-render | canvas loop, starfield, ship+WASD, HUD; on PR #2 |
 | 2026-08-25T10:52:00Z | feature verified | 5-spheres-shooting-scoring | spheres/bounce/shoot/score, 34 tests; on PR #2 |
 | 2026-08-25T11:05:00Z | feature verified | 6-levels-lives-gameover | levels/lives/game-over+name entry, 42 tests; on PR #2 |
+| 2026-08-27T10:20:00Z | feature started | 10-mobile-support | branch feature/10-mobile-support, issue #5 |
+| 2026-08-27T11:38:00Z | feature verified | 10-mobile-support | touch controls + adaptive arena; 49 tests; PR #6 |
 
 ## Decisions
 <!-- Required to add, remove, or re-scope a backlog row after the human checkpoint. Otherwise "None". -->
 - Feature 1 (project-scaffold) will create ~4 projects, exceeding `changeBudget.maxNewProjects` (1).
   This is expected greenfield foundation work; the overage will be recorded as a Decision/Escalation
   in that feature's tracker per GUARDRAILS.md.
+- 2026-08-27: Added backlog row 10 (mobile-support, P1) after the human checkpoint, approved by the
+  human owner during INTAKE. Scope: touch controls + adaptive arena on touch devices only; desktop
+  behaviour unchanged. Kept as a separate PR-sized feature per the one-tracker/one-PR rule.
