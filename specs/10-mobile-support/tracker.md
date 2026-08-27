@@ -8,11 +8,11 @@
 - **Branch:** feature/10-mobile-support
 - **Worktree:** (in-place branch)
 - **WorktreeMode:** branch
-- **Phase:** REVIEW
-- **ActivePrompt:** reviewer
-- **Status:** IN_PROGRESS
+- **Phase:** DONE
+- **ActivePrompt:** orchestrator
+- **Status:** DONE
 - **Created:** 2026-08-27T10:20:00Z
-- **Updated:** 2026-08-27T11:10:00Z
+- **Updated:** 2026-08-27T12:05:00Z
 
 ## Phase Log
 | Timestamp (UTC) | Phase | Prompt | Agent Model | Note |
@@ -24,6 +24,8 @@
 | 2026-08-27T10:55:00Z | IMPLEMENT | implementer | Claude Opus 4.8 | ControlsConfig; touch detect + adaptive arena; joystick/fire/toggle overlay + CSS; game.js pointer wiring |
 | 2026-08-27T11:05:00Z | VERIFY | orchestrator | Claude Opus 4.8 | build 0 warnings, 49 tests pass, format clean, node --check ok; headless touch+desktop smoke PASS (no console/404 errors) |
 | 2026-08-27T11:10:00Z | REVIEW | reviewer | Claude Opus 4.8 | self-review vs conventions/guardrails/DoD |
+| 2026-08-27T11:59:00Z | PR | orchestrator | Claude Opus 4.8 | PR #6; 4 Copilot review rounds addressed (default single-source, gesture blocking, rotate hint, aspect ratio); CI green; Copilot 🟢 approved |
+| 2026-08-27T12:05:00Z | DONE | orchestrator | Claude Opus 4.8 | squash-merged to main (#6); branch deleted; issue #5 closed |
 
 ## Requirements
 <!-- FROZEN after scope lock. -->
@@ -160,7 +162,16 @@ handlers to the control elements (looked up within the canvas's shell):
   owner during INTAKE (see backlog Decisions). Kept as its own tracker/PR.
 - Adaptive arena limited to touch devices (human choice); desktop keeps the fixed 1280x720 field to
   avoid changing existing desktop gameplay.
+- Concurrent-edit incident: a concurrent edit to `Game.razor` (adding a game-over `◄ BACK` link and
+  `open="true"`) also dropped the restored `rotate-hint` markup, which a `git add -A` swept into a
+  fix-up commit. Copilot review caught the missing hint; it was restored and the concurrent BACK-link
+  additions were preserved.
+- Review rounds: Copilot raised (1) hard-coded default constants — resolved with
+  `GameConfig.ControlsOrDefault` as the single source of truth; (2) browser gestures reaching the
+  full-screen canvas — resolved with `touch-action/overscroll-behavior: none`; (3) missing rotate
+  hint — restored; (4) `adaptArenaToScreenOnTouch:false` still stretching the canvas — resolved with
+  `object-fit: contain` + black letterbox. Final review 🟢 approved.
 
 ## Pull Request
 - **Url:** https://github.com/john-slo/quadspace/pull/6
-- **State:** OPEN (Copilot review requested; awaiting CI + review)
+- **State:** MERGED (squash) — CI green, Copilot 🟢 approved

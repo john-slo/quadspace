@@ -47,7 +47,7 @@ lives in a central `game-config.json`.
 | 6 | levels-lives-gameover | P0 | 5, 2 | Level progression (8×level spheres, spawn rate = level/sec) with level intro; lives with brief invulnerability, +1 life every 8 levels, and rare life-spheres; game over triggers name entry (≤50 chars) and saves via the score API. | IN_PROGRESS |
 | 7 | audio-controls-visuals | P1 | 4 | Procedural Web Audio background beat with a mute toggle (M, persisted), an on-screen controls legend (move/fire/sound), and richer ship/sphere/projectile visuals. | IN_PROGRESS |
 | 8 | gamepad-support | P1 | 5 | Gamepad support: left stick moves the ship, ABXY buttons fire in the four directions. | READY |
-| 10 | mobile-support | P1 | 5 | Touch-device support: on touch devices the play-field adapts to the screen, a left virtual joystick moves the ship, four right-side buttons fire, on-screen music/SFX toggle icons replace the keyboard legend, and a portrait "rotate to landscape" hint appears. Desktop (non-touch) is unchanged. | READY |
+| 10 | mobile-support | P1 | 5 | Touch-device support: on touch devices the play-field adapts to the screen, a left virtual joystick moves the ship, four right-side buttons fire, on-screen music/SFX toggle icons replace the keyboard legend, and a portrait "rotate to landscape" hint appears. Desktop (non-touch) is unchanged. | DONE |
 
 ## Run Log
 <!-- Append-only. The orchestrator writes one row each time EXECUTE starts/stops or a row transitions. -->
@@ -62,6 +62,7 @@ lives in a central `game-config.json`.
 | 2026-08-25T11:05:00Z | feature verified | 6-levels-lives-gameover | levels/lives/game-over+name entry, 42 tests; on PR #2 |
 | 2026-08-27T10:20:00Z | feature started | 10-mobile-support | branch feature/10-mobile-support, issue #5 |
 | 2026-08-27T11:38:00Z | feature verified | 10-mobile-support | touch controls + adaptive arena; 49 tests; PR #6 |
+| 2026-08-27T12:05:00Z | feature merged | 10-mobile-support | PR #6 squash-merged to main; Copilot 🟢; issue #5 closed |
 
 ## Decisions
 <!-- Required to add, remove, or re-scope a backlog row after the human checkpoint. Otherwise "None". -->
