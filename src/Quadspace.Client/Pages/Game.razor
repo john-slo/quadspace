@@ -25,10 +25,6 @@
                 <button class="touch-fire down" type="button" data-dx="0" data-dy="1" aria-label="Fire down">▼</button>
             </div>
         </div>
-
-        <div class="rotate-hint" role="status">
-            <p>⟳ ROTATE TO LANDSCAPE</p>
-        </div>
     }
 
     <footer class="game-controls">
@@ -46,7 +42,7 @@
 
     @if (_gameOver)
     {
-        <dialog class="gameover" open>
+        <dialog class="gameover" open="true">
             <h1 class="neon-title">GAME OVER</h1>
             <p class="neon-subtitle">SCORE @_finalScore.ToString("N0")</p>
             <EditForm Model="this" OnValidSubmit="SubmitScoreAsync">
@@ -61,6 +57,7 @@
                     @(_submitting ? "SAVING…" : "SAVE SCORE")
                 </button>
             </EditForm>
+            <a class="game-exit" href="">◄ BACK</a>
             @if (_submitError is not null)
             {
                 <p class="submit-error" role="alert">@_submitError</p>
