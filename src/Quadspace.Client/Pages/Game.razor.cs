@@ -48,16 +48,15 @@ public partial class Game : IAsyncDisposable
         if (firstRender)
         {
             _selfRef = DotNetObjectReference.Create(this);
-            // Import with a stable query so the static-web-asset import map (which rewrites
-            // "./js/game.js" to a fingerprinted path the host's static-file middleware does not serve)
-            // is bypassed and the physical module is loaded directly.
+            // Import with a stable query string so the physical module is loaded directly, bypassing
+            // the static-web-asset import map (which rewrites "./js/game.js" to a fingerprinted URL).
             _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/game.js?v=1");
             _isTouch = await _module.InvokeAsync<bool>("isTouchDevice");
 
             // On touch devices the play-field adapts to the actual screen so the game fills the
             // viewport instead of being letterboxed. The engine reads every bound from the config, so
             // cloning the immutable config with new arena dimensions is all that is required.
-            if (_isTouch && (Config.Controls?.AdaptArenaToScreenOnTouch ?? true))
+            if (_isTouch && Config.ControlsOrDefault.AdaptArenaToScreenOnTouch)
             {
                 var viewport = await _module.InvokeAsync<Viewport>("measureViewport");
                 if (viewport.Width > 0 && viewport.Height > 0)
@@ -87,7 +86,7 @@ public partial class Game : IAsyncDisposable
                     secondLayer = Config.Audio.SecondLayer,
                     beatPulse = Config.Sphere.BeatPulse,
                     touch = _isTouch,
-                    joystickDeadZone = Config.Controls?.JoystickDeadZone ?? 0.15,
+                    joystickDeadZone = Config.ControlsOrDefault.JoystickDeadZone,
                 },
                 _selfRef);
         }

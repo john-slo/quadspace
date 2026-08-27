@@ -40,10 +40,9 @@ public sealed class GameConfigTests
 
         Assert.NotNull(config);
         Assert.Null(config!.Controls);
-        // Callers fall back to ControlsConfig defaults when the section is absent.
-        var defaults = new ControlsConfig();
-        Assert.Equal(0.15, defaults.JoystickDeadZone);
-        Assert.True(defaults.AdaptArenaToScreenOnTouch);
+        // Callers use ControlsOrDefault, the single source of truth, when the section is absent.
+        Assert.Equal(0.15, config.ControlsOrDefault.JoystickDeadZone);
+        Assert.True(config.ControlsOrDefault.AdaptArenaToScreenOnTouch);
     }
 
     [Fact]

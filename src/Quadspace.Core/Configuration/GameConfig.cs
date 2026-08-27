@@ -14,7 +14,15 @@ public sealed record GameConfig(
     LevelsConfig Levels,
     StarfieldConfig Starfield,
     AudioConfig Audio,
-    ControlsConfig? Controls = null);
+    ControlsConfig? Controls = null)
+{
+    /// <summary>
+    /// Touch/mobile control tuning. Falls back to <see cref="ControlsConfig"/>'s own defaults when the
+    /// optional <c>controls</c> section is omitted from the JSON, so callers get a single source of
+    /// truth for the defaults instead of hard-coding them.
+    /// </summary>
+    public ControlsConfig ControlsOrDefault => Controls ?? new ControlsConfig();
+}
 
 /// <summary>Bounded 2D play area, in world units (pixels at 1:1 render scale).</summary>
 public sealed record ArenaConfig(double Width, double Height);
@@ -57,7 +65,8 @@ public sealed record AudioConfig(int BeatsPerMinute, bool SecondLayer);
 /// Touch / mobile control tuning. <see cref="JoystickDeadZone"/> is the fraction (0..1) of the
 /// joystick radius ignored before the ship starts moving. When
 /// <see cref="AdaptArenaToScreenOnTouch"/> is true, touch devices size the play-field to the actual
-/// screen instead of the fixed <see cref="ArenaConfig"/> dimensions. Optional in JSON; the defaults
-/// below apply when the section is absent.
+/// screen instead of the fixed <see cref="ArenaConfig"/> dimensions. This section is optional in the
+/// JSON; when absent, <see cref="GameConfig.ControlsOrDefault"/> supplies an instance with the
+/// default values declared below.
 /// </summary>
 public sealed record ControlsConfig(double JoystickDeadZone = 0.15, bool AdaptArenaToScreenOnTouch = true);
