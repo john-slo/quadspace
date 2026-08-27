@@ -20,6 +20,18 @@ const FIRE_KEYS = {
 const clampAxis = (v) => (v < -1 ? -1 : v > 1 ? 1 : v);
 
 // ---------------------------------------------------------------------------
+// Touch / mobile helpers. Exposed to Blazor so the client can decide whether to
+// adapt the arena and render touch controls.
+// ---------------------------------------------------------------------------
+export function isTouchDevice() {
+    return (navigator.maxTouchPoints || 0) > 0 || 'ontouchstart' in window;
+}
+
+export function measureViewport() {
+    return { width: window.innerWidth, height: window.innerHeight };
+}
+
+// ---------------------------------------------------------------------------
 // Procedural background beat (Web Audio): kick + bass + arp, plus an optional
 // melodic second layer. Fires `onBeat` on each quarter note (for beat-synced
 // spawning and the visual pulse). Mute state persists in localStorage.
@@ -101,6 +113,11 @@ function createBeat(options) {
         const indicator = document.getElementById('sound-state');
         if (indicator) {
             indicator.textContent = muted ? 'OFF' : 'ON';
+        }
+        const button = document.getElementById('touch-music');
+        if (button) {
+            button.classList.toggle('control-off', muted);
+            button.setAttribute('aria-pressed', String(!muted));
         }
     };
 
@@ -184,6 +201,11 @@ function createSfx() {
         const indicator = document.getElementById('sfx-state');
         if (indicator) {
             indicator.textContent = off ? 'OFF' : 'ON';
+        }
+        const button = document.getElementById('touch-sfx');
+        if (button) {
+            button.classList.toggle('control-off', off);
+            button.setAttribute('aria-pressed', String(!off));
         }
     };
 
@@ -418,6 +440,135 @@ function draw(ctx, canvas, starfield, dt, model, now, pulse) {
 }
 
 // ---------------------------------------------------------------------------
+// Touch controls (virtual joystick + fire buttons + audio toggles). The DOM is
+// rendered by Game.razor; here we attach pointer handlers that feed the same
+// `move`/`Fire`/mute/sfx paths the keyboard uses. All handlers return a cleanup.
+// ---------------------------------------------------------------------------
+function bindTap(el, handler) {
+    const onDown = (e) => {
+        e.preventDefault();
+        handler();
+    };
+    el.addEventListener('pointerdown', onDown);
+    return () => el.removeEventListener('pointerdown', onDown);
+}
+
+function setupFireButton(btn, ctx) {
+    const dx = Number(btn.dataset.dx) || 0;
+    const dy = Number(btn.dataset.dy) || 0;
+    return bindTap(btn, () => {
+        ctx.beat.start(); // first gesture resumes/starts audio (respects mute)
+        try {
+            ctx.dotNetRef.invokeMethod('Fire', dx, dy);
+        } catch {
+            // Component was disposed between the tap and the invoke.
+        }
+        ctx.sfx.fire();
+    });
+}
+
+function setupJoystick(el, ctx) {
+    const knob = el.querySelector('.touch-knob');
+    const move = ctx.move;
+    const dead = ctx.deadZone || 0;
+    let activeId = null;
+
+    const reset = () => {
+        move.x = 0;
+        move.y = 0;
+        if (knob) {
+            knob.style.transform = 'translate(-50%, -50%)';
+        }
+    };
+
+    const apply = (clientX, clientY) => {
+        const rect = el.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        let nx = (clientX - cx) / (rect.width / 2);
+        let ny = (clientY - cy) / (rect.height / 2);
+        const mag = Math.hypot(nx, ny);
+        if (mag > 1) {
+            nx /= mag;
+            ny /= mag;
+        }
+        if (knob) {
+            knob.style.transform = `translate(calc(-50% + ${nx * 40}%), calc(-50% + ${ny * 40}%))`;
+        }
+        if (Math.hypot(nx, ny) < dead) {
+            move.x = 0;
+            move.y = 0;
+        } else {
+            move.x = clampAxis(nx);
+            move.y = clampAxis(ny);
+        }
+    };
+
+    const onDown = (e) => {
+        ctx.beat.start();
+        activeId = e.pointerId;
+        try {
+            el.setPointerCapture(e.pointerId);
+        } catch {
+            // Pointer capture is best-effort; ignore if unsupported.
+        }
+        apply(e.clientX, e.clientY);
+        e.preventDefault();
+    };
+    const onMove = (e) => {
+        if (e.pointerId === activeId) {
+            apply(e.clientX, e.clientY);
+            e.preventDefault();
+        }
+    };
+    const onUp = (e) => {
+        if (e.pointerId === activeId) {
+            activeId = null;
+            reset();
+            e.preventDefault();
+        }
+    };
+
+    el.addEventListener('pointerdown', onDown);
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerup', onUp);
+    el.addEventListener('pointercancel', onUp);
+    reset();
+
+    return () => {
+        el.removeEventListener('pointerdown', onDown);
+        el.removeEventListener('pointermove', onMove);
+        el.removeEventListener('pointerup', onUp);
+        el.removeEventListener('pointercancel', onUp);
+    };
+}
+
+function setupTouchControls(canvas, ctx) {
+    const shell = canvas.closest('.game-shell') || document;
+    const cleanups = [];
+
+    const stick = shell.querySelector('#touch-stick');
+    if (stick) {
+        cleanups.push(setupJoystick(stick, ctx));
+    }
+    shell.querySelectorAll('.touch-fire').forEach((btn) => cleanups.push(setupFireButton(btn, ctx)));
+
+    const music = shell.querySelector('#touch-music');
+    if (music) {
+        cleanups.push(bindTap(music, () => {
+            ctx.beat.start();
+            ctx.beat.toggleMuted();
+        }));
+    }
+    const sfxBtn = shell.querySelector('#touch-sfx');
+    if (sfxBtn) {
+        cleanups.push(bindTap(sfxBtn, () => ctx.sfx.toggle()));
+    }
+
+    return () => cleanups.forEach((cleanup) => cleanup());
+}
+
+// ---------------------------------------------------------------------------
 // Loop
 // ---------------------------------------------------------------------------
 export function start(canvas, arena, starfield, options, dotNetRef) {
@@ -504,10 +655,15 @@ export function start(canvas, arena, starfield, options, dotNetRef) {
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
 
+    const teardownTouch = options.touch
+        ? setupTouchControls(canvas, { move, beat, sfx, dotNetRef, deadZone: options.joystickDeadZone })
+        : () => { };
+
     const stop = () => {
         running = false;
         window.removeEventListener('keydown', onKeyDown);
         window.removeEventListener('keyup', onKeyUp);
+        teardownTouch();
         beat.stop();
         sfx.stop();
     };

@@ -1,17 +1,47 @@
 @page "/game"
 <PageTitle>quadspace</PageTitle>
 
-<div class="game-shell">
+<div class="game-shell @(_isTouch ? "touch" : null)">
     <canvas @ref="_canvas" class="game-canvas" width="@_width" height="@_height"></canvas>
+
+    @if (_isTouch && !_gameOver)
+    {
+        <div class="touch-controls">
+            <a class="touch-home" href="">◄ HOME</a>
+
+            <div class="touch-toggles">
+                <button id="touch-music" class="touch-toggle" type="button" aria-pressed="true" aria-label="Toggle music">♪</button>
+                <button id="touch-sfx" class="touch-toggle" type="button" aria-pressed="true" aria-label="Toggle sound effects">🔊</button>
+            </div>
+
+            <div id="touch-stick" class="touch-stick" aria-label="Move ship">
+                <div class="touch-knob"></div>
+            </div>
+
+            <div class="touch-fire-cluster" aria-label="Fire">
+                <button class="touch-fire up" type="button" data-dx="0" data-dy="-1" aria-label="Fire up">▲</button>
+                <button class="touch-fire left" type="button" data-dx="-1" data-dy="0" aria-label="Fire left">◄</button>
+                <button class="touch-fire right" type="button" data-dx="1" data-dy="0" aria-label="Fire right">►</button>
+                <button class="touch-fire down" type="button" data-dx="0" data-dy="1" aria-label="Fire down">▼</button>
+            </div>
+        </div>
+
+        <div class="rotate-hint" role="status">
+            <p>⟳ ROTATE TO LANDSCAPE</p>
+        </div>
+    }
 
     <footer class="game-controls">
         <a class="game-exit" href="">◄ HOME</a>
-        <div class="controls-legend">
-            <span>MOVE <b>W A S D</b></span>
-            <span>FIRE <b>&uarr; &darr; &larr; &rarr;</b></span>
-            <span>SOUND <b>M</b> <span id="sound-state">--</span></span>
-            <span>SFX <b>N</b> <span id="sfx-state">--</span></span>
-        </div>
+        @if (!_isTouch)
+        {
+            <div class="controls-legend">
+                <span>MOVE <b>W A S D</b></span>
+                <span>FIRE <b>&uarr; &darr; &larr; &rarr;</b></span>
+                <span>SOUND <b>M</b> <span id="sound-state">--</span></span>
+                <span>SFX <b>N</b> <span id="sfx-state">--</span></span>
+            </div>
+        }
     </footer>
 
     @if (_gameOver)
